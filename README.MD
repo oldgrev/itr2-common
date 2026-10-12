@@ -9,6 +9,10 @@ fork to make them (the proper route). Lit materials work too now: CM Games chang
 patch ports those changes into the fork. In VR there's no strobing and the lit walls look like the game's own under the
 torch and in shade. That was tested on the example map's simple materials only (constants and a checker); textures,
 translucent and masked materials haven't been tried (details in the guide, §5).
+I also audited the example's 19 compiled shaders against the game's own and fixed the five differences that turned up
+(height fog, aerial perspective, fill-sun luminance, volumetric lightmap clamp). The fog ones are checked in VR; the
+lightmap clamp needs baked lighting and hasn't been seen in game, and nothing beyond the simple materials has been
+audited (details in the guide, §5).
 If your map only uses engine meshes and engine materials there's also a quick route with stock UE 5.5.4 and a small
 patch to the cooked file, a kludge, which was tested in VR too.
 
@@ -52,9 +56,9 @@ What's where:
 | Path | What's in it | Tested? |
 |---|---|---|
 | [`map-making/guide.md`](map-making/guide.md) | The how-to: setting up the project, the patched fork, cooking and packaging, the stock kludge, getting into the map, and why stock 5.5.4 isn't enough | Both routes, in VR. Lit custom materials on the fork route, simple ones only (§5) |
-| [`example-map/`](example-map/) | A small example map, scripts to make, cook, package and patch it for either route, and the prebuilt fork build | Yes, in VR. The build scripts are our working ones with our paths taken out; they haven't been run end to end in this exact form |
+| [`example-map/`](example-map/) | A small example map, scripts to make, cook, package and patch it for either route, and the prebuilt fork build | Yes, in VR (the prebuilt map predates the fog and pillar options in the generator). The build scripts are our working ones with our paths taken out; they haven't been run end to end in this exact form |
 | [`loader-ue4ss/`](loader-ue4ss/) | The UE4SS Lua script that gets you into a custom map and back out | Yes, in VR, with `OpenLevel`. The level-instance mode doesn't work yet |
-| [`engine/`](engine/) | Our patch for Meta's UE 5.5.4 fork so it saves and compiles what the game expects (CM Games' properties, rendering version and shader layouts, and the instance transform setting). It includes CM's lighting shader changes. No Epic code in it; apply it with `tools/hashpatch.py` | Applying it gives the same files we cooked with. The patched fork cooks maps that load in game |
+| [`engine/`](engine/) | Our patch for Meta's UE 5.5.4 fork so it saves and compiles what the game expects (CM Games' properties, rendering version and shader layouts, and the instance transform setting). It includes CM's lighting shader changes. No Epic code in it; apply it with `tools/hashpatch.py` | Applying it gives the same files we cooked with. The patched fork cooks maps that load in game. Fog fixes checked in VR; the lightmap clamp not yet |
 | [`tools/`](tools/) | `hashpatch.py`, a check that your engine build's shader layouts match the game's, and a check of the shaders in your container | We used all of them |
 | [`data/`](data/) | The game's shader parameter layouts, read out of `IntoTheRadius2-Win64-Shipping.exe`, for that check | |
 

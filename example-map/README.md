@@ -83,6 +83,13 @@ to the loader's `config.lua`.
 - Fork route: cooked with the patched fork, packaged with stock 5.5.4 (CL 40574608), in VR: the map loads from the
   Hub, the floor is a grey checker, the inner walls red and the pad green, and the pad takes you back to the Hub.
   Those are the `prebuilt/` files. Retested in VR after the lighting port went into the fork (2026-10-12, 22:15): no strobing, and the lit walls and floor look like the game's own materials under the torch and in shade. Only these simple materials were tested, no textures, translucent or masked ones.
+- Fog and shader audit (fork route): the generator now adds a mild ExponentialHeightFog and a SkyAtmosphere (the
+  `prebuilt/` map was made before that). With `ITR2_FOG_PILLARS=1` (set it in your shell before the build script,
+  and it needs the custom materials) it also makes strong fog and four pairs of pillars at 10, 25, 50 and 100 m, left
+  our red material, right the game's `BasicShapeMaterial`. In VR (DX11 and DX12) the pairs fade
+  identically with the audit fixes in [`../engine/`](../engine/). Not checked: the volumetric lightmap clamp (this
+  map has no baked lighting), the eye index the light function atlas reads, and materials with textures, masks,
+  translucency or lightmaps. See guide §5.
 - Stock route: generating, cooking and packaging with stock 5.5.4. In VR, loaded with `OpenLevel`: you arrive on the
   floor, can walk around it and up the ramp, and the return pad takes you back to the Hub.
 - Both build scripts are our working scripts with our own paths taken out and the install step folded in. The fork

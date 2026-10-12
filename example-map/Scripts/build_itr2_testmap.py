@@ -4,13 +4,18 @@
 #   /Game/ITR2Mods/TestMap/L_ITR2Test        the map (40 x 40 m floor, walls, a platform and ramp, PlayerStart, sun + sky light)
 #   /Game/ITR2Mods/TestMap/PAL_ITR2TestMap   a PrimaryAssetLabel that puts this folder in chunk 100, so the cook writes
 #                                            our map into its own pakchunk100 container
-# Lights are Movable, no lighting build.
+# Lights are Movable, no lighting build. There's a mild ExponentialHeightFog (volumetric fog on, a little directional
+# inscattering) and a SkyAtmosphere, so the fog code in the base-pass vertex shader gets used. Both routes get them.
 #
 # Two versions of the map:
 #   - default: engine meshes and BasicShapeMaterial only (the game has its own cooked copies). For stock 5.5.4.
 #   - ITR2_CUSTOM_MATERIALS=1 (build-itr2-map-fork.ps1 sets it): also makes three materials of our own in
 #     /Game/ITR2Mods/TestMap/Materials (red walls, a checker floor, a green unlit return pad). Those need the patched
 #     fork to cook (map-making/guide.md, section 4).
+#   - ITR2_FOG_PILLARS=1 (needs ITR2_CUSTOM_MATERIALS=1): for checking your fog against the game's. It swaps in a strong
+#     blue fog with orange directional inscattering, opens an 8 m gap in the +X wall and puts four pairs of pillars on a
+#     floor extension at 10, 25, 50 and 100 m from the start: left M_ITR2_Red, right the game's own BasicShapeMaterial.
+#     Where the shaders match the game's, both pillars of a pair fade into the fog the same.
 import os
 import unreal
 
@@ -40,6 +45,10 @@ def box(label, x, y, z, sx, sy, sz, yaw=0.0, pitch=0.0, mat=None):
 
 MATDIR = FOLDER + "/Materials"
 CUSTOM = os.environ.get("ITR2_CUSTOM_MATERIALS") == "1"
+PILLARS = os.environ.get("ITR2_FOG_PILLARS") == "1"
+if PILLARS and not CUSTOM:
+    print("ITR2_FOG_PILLARS needs ITR2_CUSTOM_MATERIALS=1 (the left pillars use M_ITR2_Red); no pillars")
+    PILLARS = False
 mel = unreal.MaterialEditingLibrary
 
 
@@ -125,8 +134,21 @@ def build():
     unreal.EditorLoadingAndSavingUtils.new_blank_map(False)
     H = 2000.0   # 40 x 40 m
     box("Floor", 0, 0, -10, H * 2, H * 2, 20, mat=checker)
-    for i, (x, y, sx, sy) in enumerate([(H, 0, 100, H * 2), (-H, 0, 100, H * 2), (0, H, H * 2, 100), (0, -H, H * 2, 100)]):
+    for i, (x, y, sx, sy) in enumerate([(-H, 0, 100, H * 2), (0, H, H * 2, 100), (0, -H, H * 2, 100)]):
         box("Wall%d" % i, x, y, 150, sx, sy, 300)
+    if PILLARS:
+        # +X wall with an 8 m opening on the start's view line (y -400..400), so the pillars outside stay visible
+        GAP = 400.0
+        L = H - GAP
+        box("Wall3a", H, -(GAP + L / 2), 150, 100, L, 300)
+        box("Wall3b", H, GAP + L / 2, 150, 100, L, 300)
+        # floor behind the opening, x 2000..9600; the pillars (200 x 200 x 400) are at x = -500 / 1000 / 3500 / 8500
+        box("FloorExt", 5800, 0, -10, 7600, 2000, 20, mat=checker)
+        for d, px in ((10, -500.0), (25, 1000.0), (50, 3500.0), (100, 8500.0)):
+            box("Pillar%dm_Red" % d, px, -150, 200, 200, 200, 400, mat=red)
+            box("Pillar%dm_Basic" % d, px, 150, 200, 200, 200, 400)
+    else:
+        box("Wall3", H, 0, 150, 100, H * 2, 300)
     box("InnerWallA", 300, 600, 150, 800, 40, 300, mat=red)
     box("InnerWallB", -600, -500, 150, 40, 900, 300, mat=red)
     box("Platform", 1200, -1200, 100, 600, 400, 200)
@@ -139,7 +161,7 @@ def build():
     box("ReturnPadPost", PAD_X, PAD_Y, 160, 20, 20, 300, mat=glow)
     ps = ell.spawn_actor_from_class(unreal.PlayerStart, unreal.Vector(-1500, 0, 100), unreal.Rotator(0, 0, 0))
     tag(ps, "PlayerStart")
-    sun = ell.spawn_actor_from_class(unreal.DirectionalLight, unreal.Vector(0, 0, 1000), unreal.Rotator(0, -50, 35))
+    sun = ell.spawn_actor_from_class(unreal.DirectionalLight, unreal.Vector(0, 0, 1000), unreal.Rotator(0, -25, 210) if PILLARS else unreal.Rotator(0, -50, 35))
     sun.root_component.set_mobility(unreal.ComponentMobility.MOVABLE)
     sun.light_component.set_intensity(3.0)
     tag(sun, "Sun")
@@ -147,6 +169,29 @@ def build():
     sky.root_component.set_mobility(unreal.ComponentMobility.MOVABLE)
     sky.light_component.set_intensity(1.0)
     tag(sky, "SkyLight")
+
+    # Fog. FogDensity is per 1000 cm, so 0.05 is an optical depth of about 0.5 at 100 m.
+    fog = ell.spawn_actor_from_class(unreal.ExponentialHeightFog, unreal.Vector(0, 0, 0), unreal.Rotator(0, 0, 0))
+    fc = fog.component
+    fc.set_editor_property("enable_volumetric_fog", True)
+    fc.set_editor_property("directional_inscattering_exponent", 4.0)
+    fc.set_editor_property("directional_inscattering_start_distance", 500.0)
+    if PILLARS:
+        # strong and saturated so a difference between the two pillars of a pair shows: tau about 0.4 / 1 / 2 / 4 at 10 / 25 / 50 / 100 m
+        fc.set_editor_property("fog_density", 0.4)
+        fc.set_editor_property("fog_height_falloff", 0.001)               # about the same at any height
+        fc.set_editor_property("start_distance", 0.0)
+        fc.set_editor_property("fog_max_opacity", 1.0)
+        fc.set_editor_property("fog_inscattering_luminance", unreal.LinearColor(0.0, 0.25, 1.0, 1.0))
+        fc.set_editor_property("volumetric_fog_distance", 6000.0)         # the 100 m pair is beyond it, so that one is vertex fog only
+        fc.set_editor_property("volumetric_fog_albedo", unreal.Color(40, 90, 255, 255))
+        fc.set_editor_property("directional_inscattering_luminance", unreal.LinearColor(8.0, 1.5, 0.0, 1.0))
+    else:
+        fc.set_editor_property("fog_density", 0.05)
+        fc.set_editor_property("directional_inscattering_luminance", unreal.LinearColor(1.0, 0.75, 0.4, 1.0))
+    tag(fog, "ExponentialHeightFog")
+    atm = ell.spawn_actor_from_class(unreal.SkyAtmosphere, unreal.Vector(0, 0, 0), unreal.Rotator(0, 0, 0))
+    tag(atm, "SkyAtmosphere")
     unreal.EditorLoadingAndSavingUtils.save_map(ell.get_editor_world(), MAP)
 
     # chunk label

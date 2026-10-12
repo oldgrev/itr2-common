@@ -102,6 +102,9 @@
        "text": "\t// ITR2: CM Games threshold curve (docs/itr2/cm-lighting.md 3a), replaces the plain ColorScale multiply"
       },
       {
+       "text": "\tfloat ITR2_I_Lum = Luminance(OutDiffuseLighting); // ITR2: used for the fill-sun occlusion when no skylight; taken before the threshold curve like CM (shader-audit D1)"
+      },
+      {
        "text": "\tfloat ITR2_D2 = dot(MaterialParameters.WorldPosition_CamRelative, MaterialParameters.WorldPosition_CamRelative);"
       },
       {
@@ -166,9 +169,6 @@
         "Engine/Shaders/Private/BasePassPixelShader.usf",
         381
        ]
-      },
-      {
-       "text": "\tfloat ITR2_I_Lum = Luminance(OutDiffuseLighting); // ITR2: used for the fill-sun occlusion when no skylight"
       }
      ]
     },
@@ -290,6 +290,23 @@
      "add": [
       {
        "text": "\t\t\t, GetLocalLightFunctionCommon(SvPositionToResolvedTranslatedWorld(In.SvPosition), GetDirectionalLightData(EyeIndex).LightFunctionAtlasLightIndex, EyeIndex /* ITR2: eye */)"
+      }
+     ]
+    }
+   ]
+  },
+  {
+   "path": "Engine/Shaders/Private/BasePassVertexShader.usf",
+   "sha256": "4423f4cb8a8282ee47d0338901b7a9dde89616a0ff06f6686ca39a8b7f96f4d0",
+   "edits": [
+    {
+     "line": 107,
+     "remove": [
+      "c33ab81fd8aee0b0baa83c6aba856aed511be7355989afa52b894c15c02e0d89"
+     ],
+     "add": [
+      {
+       "text": "\t\t\tMakePrecise(mul(float4(WorldPosition.xyz, 1), View.TranslatedWorldToClip)), (WorldPosition.xyz - ResolvedView.TranslatedWorldCameraOrigin) * CM_TO_SKY_UNIT, // ITR2: CM recomputes the clip position (shader-audit V3)"
       }
      ]
     }
@@ -436,6 +453,34 @@
      "add": [
       {
        "text": "\t\tfloat3 LightColor = DirectionalLightData.DirectionalLightColor * ITR2_GLA; // ITR2:"
+      }
+     ]
+    }
+   ]
+  },
+  {
+   "path": "Engine/Shaders/Private/HeightFogCommon.ush",
+   "sha256": "3401d7928d3370368433290e7c00135851fcb59a2ba11e1a99dde78230b32bda",
+   "edits": [
+    {
+     "line": 307,
+     "remove": [
+      "73c1495e28645a9bd791a320c8ee32f0fa8222a798bcdc30a0d1ec10bdb2df98"
+     ],
+     "add": [
+      {
+       "text": "\tif (FogData.InscatteringLightDirection.w >= 0 && ExcludeDistance >= FogData.InscatteringLightDirection.w // ITR2: CM extra condition (shader-audit V2)"
+      }
+     ]
+    },
+    {
+     "line": 405,
+     "remove": [
+      "91808e1d866b9014b6b9910de154dec444c5701ae595894c226c0ba0b88f3c90"
+     ],
+     "add": [
+      {
+       "text": "\tExcludeDistance = InView.VolumetricFogMaxDistance; // ITR2: CM uses the radial distance (shader-audit V1)"
       }
      ]
     }
@@ -984,6 +1029,23 @@
      "add": [
       {
        "text": "\t\t\t\tLightFunctionColor = GetLocalLightFunctionCommon(TranslatedWorldPosition, LightData.LightFunctionAtlasLightIndex, 0 /* ITR2: eye */);"
+      }
+     ]
+    }
+   ]
+  },
+  {
+   "path": "Engine/Shaders/Private/VolumetricLightmapShared.ush",
+   "sha256": "c0e9d9a3060d4af0e0a90deac1a38802f151eda931bca870f68318c2f1843949",
+   "edits": [
+    {
+     "line": 29,
+     "remove": [
+      "b3fe71972adff72249c509bbd808f5f4da9043d46360fd28243a07275c31aa81"
+     ],
+     "add": [
+      {
+       "text": "\tfloat3 IndirectionTextureTexelCoordinate = clamp(IndirectionVolumeUVs * View.VolumetricLightmapIndirectionTextureSize, 4.0f, View.VolumetricLightmapIndirectionTextureSize - 5.0f); // ITR2: CM clamp (shader-audit D2)"
       }
      ]
     }
@@ -2614,8 +2676,8 @@
       },
       {
        "ref": [
-        "Engine/Shaders/Private/LightData.ush",
-        23
+        "Engine/Shaders/Private/HeightFogCommon.ush",
+        85
        ]
       }
      ]
@@ -2794,8 +2856,8 @@
       },
       {
        "ref": [
-        "Engine/Shaders/Private/LightData.ush",
-        23
+        "Engine/Shaders/Private/HeightFogCommon.ush",
+        85
        ]
       }
      ]
@@ -3082,8 +3144,8 @@
       },
       {
        "ref": [
-        "Engine/Shaders/Private/LightData.ush",
-        23
+        "Engine/Shaders/Private/HeightFogCommon.ush",
+        85
        ]
       }
      ]
@@ -3241,8 +3303,8 @@
       },
       {
        "ref": [
-        "Engine/Shaders/Private/LightData.ush",
-        23
+        "Engine/Shaders/Private/HeightFogCommon.ush",
+        85
        ]
       }
      ]
@@ -3403,8 +3465,8 @@
       },
       {
        "ref": [
-        "Engine/Shaders/Private/LightData.ush",
-        23
+        "Engine/Shaders/Private/HeightFogCommon.ush",
+        85
        ]
       },
       {
@@ -3475,8 +3537,8 @@
       },
       {
        "ref": [
-        "Engine/Shaders/Private/LightData.ush",
-        23
+        "Engine/Shaders/Private/HeightFogCommon.ush",
+        85
        ]
       },
       {
@@ -3550,8 +3612,8 @@
       },
       {
        "ref": [
-        "Engine/Shaders/Private/LightData.ush",
-        23
+        "Engine/Shaders/Private/HeightFogCommon.ush",
+        85
        ]
       }
      ]

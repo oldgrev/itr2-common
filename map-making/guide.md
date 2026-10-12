@@ -16,7 +16,7 @@ I don't love this *we* phrasing but anywhere *we* is used, it's illustrating tha
 ## 0. Where things are at (2026-10-12)
 | You want | Status |
 |---|---|
-| A map with your own materials | Works with the patched fork (§4, §5), lit ones too. Tested in VR with simple materials only (§5) |
+| A map with your own materials | Works with the patched fork (§4, §5), lit ones too. Tested in VR with simple materials only (§5). Compiled shaders audited against the game's, fog proven in VR, baked-lighting clamp not (§5) |
 | A map from engine meshes and engine materials only | Works with either route. The stock route (§6) is quicker to set up |
 | Material instances | Untested on the fork. On stock 5.5.4, don't: one crashed the game |
 | The game's own materials and meshes in your map | Unexplored. Probably fine, if you can get copies at the right paths |
@@ -212,6 +212,25 @@ materials. That was only the example's simple materials. Textures, translucent a
 so expect surprises there. The fill and ambient terms were worked out from the game's compiled shaders, so they're a
 close match, not CM's source.
 
+**Audit.** Afterwards I compared all 19 compiled shaders of the example (SM5 and SM6) with the game's equivalents:
+same resource slots and signatures, and the instruction streams with registers and constants blanked. Five real
+differences were left, and they're fixed in the patch (marked `shader-audit` in the shaders):
+- in the base-pass vertex shader, the height fog's exclusion distance (we divided by the cosine to the view
+  direction, the game doesn't), its directional inscattering condition, and the clip position the aerial perspective
+  looks up (the game recomputes it from the primary view);
+- the fill-sun weight takes the luminance before the threshold curve, not after;
+- the volumetric lightmap indirection lookup is clamped.
+
+Each was proven offline: a single shader recompiled with the fix matches the game's bytecode. The three fog ones were
+also checked in VR with pillar pairs, one with our red material and one with the game's `BasicShapeMaterial`, at
+10 to 100 m in strong fog: they fade identically, in DX11 and DX12. The example generator can make that scene
+(`ITR2_FOG_PILLARS=1`, see the example's README).
+
+Not checked in game: the volumetric lightmap clamp (it needs baked lighting, which the example never has), and where
+the light function atlas gets its eye index from (we read `StereoPassIndex`, the game takes it from an interpolant;
+that's the same only if the game fills it with the eye index, which I couldn't check from the shaders). The audit only
+covered the example's materials, so textured, masked, translucent and lightmapped ones are still unaudited.
+
 ## 6. The quick kludge: stock 5.5.4
 For a map that only uses engine meshes and engine materials, you can skip building the fork. This is how we got the
 first map in, and it still works.
@@ -323,13 +342,13 @@ for those. Your own materials do, which is why they need the fork.
 |---|---|
 | Geometry and collision from engine meshes | Works, both routes |
 | Engine materials | Works, both routes |
-| Your own materials | Work with the fork, lit ones too (the patch has CM's lighting changes, §5). Only simple ones tested in VR: constants and a UV checker, no textures, translucency or masked |
+| Your own materials | Work with the fork, lit ones too (the patch has CM's lighting changes, §5). Only simple ones tested in VR: constants and a UV checker, no textures, translucency or masked. Shader audit and fog check: §5 |
 | Movable lights | Work |
 | Getting in and back out | Works with the loader and `OpenLevel` |
 | Material instances | Crashed with stock 5.5.4. Untested on the fork |
 | Textures, translucent materials, decals, landscapes | Untested |
 | The game's own meshes and materials | Unexplored. The game has them cooked, so referencing them at the same path should work as it did in ITR1, but you'd need source copies to place them, and there's no SDK for ITR2 we know of |
-| Baked lighting | Unexplored |
+| Baked lighting | Unexplored. One shader fix for it (volumetric lightmap clamp, §5) has never been seen in game |
 | Navmesh, AI spawning, loot | Unexplored. The game's areas have navigation in their own sublevels |
 | Streaming the map in next to the Hub | Doesn't work yet (§7) |
 | Gates, travel, the map screen, missions, saves | Not available. The game's travel uses level tags from its own data |
