@@ -1,0 +1,4161 @@
+{
+ "format": "hashpatch/1",
+ "files": [
+  {
+   "path": "Engine/Config/Windows/DataDrivenPlatformInfo.ini",
+   "sha256": "593369b520bc42d0c3482e3fed4a03fbeb47c5330b31c2f424c29bcdcf89d6be",
+   "edits": [
+    {
+     "line": 44,
+     "remove": [
+      "7346f3dae2562b7e163c71034d86cdd8f70bbd7c3a75e4fc7218e0e2357833be"
+     ],
+     "add": [
+      {
+       "text": "; ITR2: the game uses uncompressed instance transforms"
+      },
+      {
+       "text": "bSupportsSceneDataCompressedTransforms=false"
+      }
+     ]
+    },
+    {
+     "line": 97,
+     "remove": [
+      "7346f3dae2562b7e163c71034d86cdd8f70bbd7c3a75e4fc7218e0e2357833be"
+     ],
+     "add": [
+      {
+       "text": "; ITR2: the game uses uncompressed instance transforms"
+      },
+      {
+       "text": "bSupportsSceneDataCompressedTransforms=false"
+      }
+     ]
+    },
+    {
+     "line": 156,
+     "remove": [
+      "7346f3dae2562b7e163c71034d86cdd8f70bbd7c3a75e4fc7218e0e2357833be"
+     ],
+     "add": [
+      {
+       "text": "; ITR2: the game uses uncompressed instance transforms"
+      },
+      {
+       "text": "bSupportsSceneDataCompressedTransforms=false"
+      }
+     ]
+    }
+   ]
+  },
+  {
+   "path": "Engine/Shaders/Private/BasePassPixelShader.usf",
+   "sha256": "2afe75ca03525f13531170d0cae112848fbebcaae836a63e73bb75e758d02898",
+   "edits": [
+    {
+     "line": 347,
+     "remove": [
+      "8e944d1dcc142e113f152f2484120ec0140082abfdcd92757593284101e4d0de"
+     ],
+     "add": [
+      {
+       "text": "void GetSkyLighting(FMaterialPixelParameters MaterialParameters, VTPageTableResult LightmapVTPageTableResult, bool bEvaluateBackface, float3 WorldNormal, LightmapUVType LightmapUV, uint LightmapDataIndex, float3 SkyOcclusionUV3D, out float3 OutDiffuseLighting, out float3 OutSubsurfaceLighting, out float OutSkyVisibility, out float OutGeometryTerm /* ITR2: */)"
+      }
+     ]
+    },
+    {
+     "line": 351,
+     "remove": [],
+     "add": [
+      {
+       "text": "\tOutSkyVisibility = 1; // ITR2:"
+      },
+      {
+       "text": "\tOutGeometryTerm = 1; // ITR2:"
+      }
+     ]
+    },
+    {
+     "line": 447,
+     "remove": [],
+     "add": [
+      {
+       "text": "\t\tOutSkyVisibility = SkyVisibility; // ITR2:"
+      },
+      {
+       "text": "\t\tOutGeometryTerm = GeometryTerm; // ITR2:"
+      },
+      {
+       "text": ""
+      }
+     ]
+    },
+    {
+     "line": 656,
+     "remove": [
+      "a368b3d87b3667f1bbc8b6e56cc8fbb5a763bb44ab46e5f82d5ba3a6a92c2875",
+      "24df7670bd7d9f3c0b8981033f5ee7806e75312c37ed9d1b5f16be54bf479d39"
+     ],
+     "add": [
+      {
+       "text": "\t// ITR2: CM Games threshold curve (docs/itr2/cm-lighting.md 3a), replaces the plain ColorScale multiply"
+      },
+      {
+       "text": "\tfloat ITR2_D2 = dot(MaterialParameters.WorldPosition_CamRelative, MaterialParameters.WorldPosition_CamRelative);"
+      },
+      {
+       "ref": [
+        "Engine/Shaders/Private/BasePassPixelShader.usf",
+        354
+       ]
+      },
+      {
+       "text": "\t\tfloat4 Th = View.PrecomputedIndirectLightingBrightnessThresholdConst;"
+      },
+      {
+       "text": "\t\tfloat t = saturate(ITR2_D2 * View.PrecomputedIndirectLightingDistanceBlendConst.x + View.PrecomputedIndirectLightingDistanceBlendConst.y);"
+      },
+      {
+       "text": "\t\tfloat3 ScaleBase = lerp(View.PrecomputedIndirectLightingColorScale, View.PrecomputedIndirectLightingColorScaleFar, t);"
+      },
+      {
+       "text": ""
+      },
+      {
+       "text": "\t\tfloat3 I = OutDiffuseLighting;"
+      },
+      {
+       "text": "\t\tfloat b = saturate(max3(I.r, I.g, I.b) * Th.y + Th.z);"
+      },
+      {
+       "text": "\t\tfloat sc = b * b * (2 - b);"
+      },
+      {
+       "text": "\t\tfloat3 Scale = lerp(ScaleBase, 1, sc);"
+      },
+      {
+       "text": "\t\tfloat3 Excess = max(I - Th.x, 0);"
+      },
+      {
+       "text": "\t\tOutDiffuseLighting = (I - Excess) * Scale + Excess;"
+      },
+      {
+       "text": ""
+      },
+      {
+       "text": "\t\tfloat3 IS = OutSubsurfaceLighting;"
+      },
+      {
+       "text": "\t\tfloat bS = saturate(max3(IS.r, IS.g, IS.b) * Th.y + Th.z);"
+      },
+      {
+       "text": "\t\tfloat scS = bS * bS * (2 - bS);"
+      },
+      {
+       "text": "\t\tfloat3 ScaleS = lerp(ScaleBase, 1, scS);"
+      },
+      {
+       "text": "\t\tfloat3 ExcessS = max(IS - Th.x, 0);"
+      },
+      {
+       "text": "\t\tOutSubsurfaceLighting = (IS - ExcessS) * ScaleS + ExcessS;"
+      },
+      {
+       "ref": [
+        "Engine/Shaders/Private/BasePassPixelShader.usf",
+        381
+       ]
+      },
+      {
+       "text": "\tfloat ITR2_I_Lum = Luminance(OutDiffuseLighting); // ITR2: used for the fill-sun occlusion when no skylight"
+      }
+     ]
+    },
+    {
+     "line": 661,
+     "remove": [
+      "8e9ef0a9174945b53083ea4969d15aef93789b41743d7c7d8264c8fe3877c1af"
+     ],
+     "add": [
+      {
+       "text": "\tfloat ITR2_SkyVisibility;"
+      },
+      {
+       "text": "\tfloat ITR2_GeometryTerm;"
+      },
+      {
+       "text": "\tGetSkyLighting(MaterialParameters, LightmapVTPageTableResult, bEvaluateBackface, DiffuseDir, SkyOcclusionUV, SkyOcclusionDataIndex, VolumetricLightmapBrickTextureUVs, SkyDiffuseLighting, SkySubsurfaceLighting, ITR2_SkyVisibility, ITR2_GeometryTerm);"
+      }
+     ]
+    },
+    {
+     "line": 668,
+     "remove": [],
+     "add": [
+      {
+       "text": "\t// ITR2: CM Games fill-sun (docs/itr2/cm-lighting.md 3a)"
+      },
+      {
+       "ref": [
+        "Engine/Shaders/Private/BasePassPixelShader.usf",
+        354
+       ]
+      },
+      {
+       "text": "\t\tfloat f = saturate(ITR2_D2 * View.DirectionalLightCombinedConst1.x + View.DirectionalLightCombinedConst1.y)"
+      },
+      {
+       "text": "\t\t\t* View.DirectionalLightCombinedConst1.z + View.DirectionalLightCombinedConst1.w;"
+      },
+      {
+       "text": "\t\tfloat W = 1;"
+      },
+      {
+       "text": "\t\tfloat G = 1;"
+      },
+      {
+       "ref": [
+        "Engine/Shaders/Private/BasePassPixelShader.usf",
+        386
+       ]
+      },
+      {
+       "text": "\t\tif (UseBasePassSkylight > 0)"
+      },
+      {
+       "ref": [
+        "Engine/Shaders/Private/BasePassPixelShader.usf",
+        283
+       ]
+      },
+      {
+       "text": "\t\t\tW = ITR2_SkyVisibility;"
+      },
+      {
+       "text": "\t\t\tG = ITR2_GeometryTerm;"
+      },
+      {
+       "ref": [
+        "Engine/Shaders/Private/BasePassPixelShader.usf",
+        337
+       ]
+      },
+      {
+       "ref": [
+        "Engine/Shaders/Private/DeferredLightingCommon.ush",
+        130
+       ]
+      },
+      {
+       "ref": [
+        "Engine/Shaders/Private/BasePassPixelShader.usf",
+        9
+       ]
+      },
+      {
+       "ref": [
+        "Engine/Shaders/Private/BasePassPixelShader.usf",
+        283
+       ]
+      },
+      {
+       "text": "\t\t\tW = saturate(View.DirectionalLightCombinedConst2.x * ITR2_I_Lum + View.DirectionalLightCombinedConst2.y);"
+      },
+      {
+       "ref": [
+        "Engine/Shaders/Private/BasePassPixelShader.usf",
+        337
+       ]
+      },
+      {
+       "text": "\t\tOutDiffuseLighting += saturate(f * dot(DiffuseDir, View.DirectionalLightDirection) * W) * G * View.DirectionalLightColor.rgb;"
+      },
+      {
+       "ref": [
+        "Engine/Shaders/Private/BasePassPixelShader.usf",
+        381
+       ]
+      },
+      {
+       "text": ""
+      }
+     ]
+    },
+    {
+     "line": 1576,
+     "remove": [
+      "311ec53f9e2c40acb46f951c471e5611fd2e6b2d949086b46a1085b806f158f1"
+     ],
+     "add": [
+      {
+       "text": "\t\t\t, GetLocalLightFunctionCommon(SvPositionToResolvedTranslatedWorld(In.SvPosition), GetDirectionalLightData(EyeIndex).LightFunctionAtlasLightIndex, EyeIndex /* ITR2: eye */)"
+      }
+     ]
+    }
+   ]
+  },
+  {
+   "path": "Engine/Shaders/Private/DeferredLightingCommon.ush",
+   "sha256": "c3379eb4c882c6d862b138fb30c78528a2fb5a22ac8305c58fcde2b710386173",
+   "edits": [
+    {
+     "line": 280,
+     "remove": [
+      "72919e1ac18aabc54352780c0516a8733480120235c6b7a53010737a8386047e"
+     ],
+     "add": [
+      {
+       "text": "\t\tLightMask *= (dot(ToLight, LightData.Direction) > LightData.SpotCutoff ? 1.0f : 0.0f) * SpotAttenuation(L, -LightData.Direction, LightData.SpotAngles); // ITR2: CM Games cutoff"
+      }
+     ]
+    },
+    {
+     "line": 449,
+     "remove": [
+      "c0e2dce6f6acc55fceefca2cd4b821bba7c3265966d0894cd5262dbaac2f5577"
+     ],
+     "add": [
+      {
+       "text": "\t\t\tMaskedLightColor *= GetLocalLightFunctionCommon(TranslatedWorldPosition, LightData.LightFunctionAtlasLightIndex, ResolvedView.StereoPassIndex /* ITR2: eye */);"
+      }
+     ]
+    }
+   ]
+  },
+  {
+   "path": "Engine/Shaders/Private/ForwardLightingCommon.ush",
+   "sha256": "796528726534761af03a49de02831e77d321a23de8f0df1d9fedc7e88d3cfd3f",
+   "edits": [
+    {
+     "line": 153,
+     "remove": [],
+     "add": [
+      {
+       "text": "\t// ITR2: CM Games directional attenuation (docs/itr2/cm-lighting.md 3c)"
+      },
+      {
+       "text": "\tfloat ITR2_GLA = saturate(dot(TranslatedWorldPosition, TranslatedWorldPosition) * ForwardLightData.GlobalLightAttenuationConst.x + ForwardLightData.GlobalLightAttenuationConst.y) * ForwardLightData.GlobalLightAttenuationConst.z + ForwardLightData.GlobalLightAttenuationConst.w;"
+      },
+      {
+       "text": ""
+      }
+     ]
+    },
+    {
+     "line": 154,
+     "remove": [
+      "7a5b1221e3659d62724d454ef220c6b2cfbbf96b8a2ead010d95e6a0f7171345"
+     ],
+     "add": [
+      {
+       "text": "\tif (DirectionalLightData.HasDirectionalLight && ITR2_GLA > 0 // ITR2:"
+      }
+     ]
+    },
+    {
+     "line": 163,
+     "remove": [],
+     "add": [
+      {
+       "text": "\t\tLightData.Color *= ITR2_GLA; // ITR2:"
+      }
+     ]
+    },
+    {
+     "line": 231,
+     "remove": [
+      "777c8052d31ddfe5d6eb10f82f2c7c2798efc18398a90efcb6980fe21b00fc71"
+     ],
+     "add": [
+      {
+       "text": "\t\t// ITR2: game applies DirectionalLightDistanceFadeMAD to dot(P,P), not depth (cm-lighting.md Port check 1 item 2)"
+      },
+      {
+       "text": "\t\tFGBufferData ITR2_GBufferD2 = GBufferData;"
+      },
+      {
+       "text": "\t\tITR2_GBufferD2.Depth = dot(TranslatedWorldPosition, TranslatedWorldPosition);"
+      },
+      {
+       "text": "\t\tFDeferredLightingSplit NewLighting = GetDynamicLightingSplit(TranslatedWorldPosition, -CameraVector, ITR2_GBufferD2, 1, LightData, LightAttenuation, Dither, uint2(0,0), OutDirectionalLightShadow);"
+      }
+     ]
+    },
+    {
+     "line": 300,
+     "remove": [
+      "28c40be4bafc3c7623df8c43d55ad20d01da7573d5063d97da8798607632f91c"
+     ],
+     "add": [
+      {
+       "text": "\t\t// ITR2: game applies DirectionalLightDistanceFadeMAD to dot(P,P), not depth (cm-lighting.md Port check 1 item 2)"
+      },
+      {
+       "text": "\t\tFGBufferData ITR2_GBufferD2 = GBufferData;"
+      },
+      {
+       "text": "\t\tITR2_GBufferD2.Depth = dot(TranslatedWorldPosition, TranslatedWorldPosition);"
+      },
+      {
+       "text": "\t\tFDeferredLightingSplit NewLighting = GetDynamicLightingSplit(TranslatedWorldPosition, -CameraVector, ITR2_GBufferD2, 1, LightData, LightAttenuation, Dither, uint2(0,0), SurfaceShadow);"
+      }
+     ]
+    },
+    {
+     "line": 330,
+     "remove": [],
+     "add": [
+      {
+       "text": "\t// ITR2: CM Games directional attenuation (unverified for vertex lighting)"
+      },
+      {
+       "text": "\tfloat ITR2_GLA = saturate(dot(TranslatedWorldPosition, TranslatedWorldPosition) * ForwardLightData.GlobalLightAttenuationConst.x + ForwardLightData.GlobalLightAttenuationConst.y) * ForwardLightData.GlobalLightAttenuationConst.z + ForwardLightData.GlobalLightAttenuationConst.w;"
+      },
+      {
+       "text": ""
+      }
+     ]
+    },
+    {
+     "line": 331,
+     "remove": [
+      "3dcc39ee1af2806cc186c4b9977c4b02fe8a6b767317eae49d15004332b8fead"
+     ],
+     "add": [
+      {
+       "text": "\tif (DirectionalLightData.HasDirectionalLight && ITR2_GLA > 0) // ITR2:"
+      }
+     ]
+    },
+    {
+     "line": 337,
+     "remove": [
+      "967b94de404bf71238a9efc61f45dba0a43434ce067702d67e2b9ecfe501f529"
+     ],
+     "add": [
+      {
+       "text": "\t\tfloat3 LightColor = DirectionalLightData.DirectionalLightColor * ITR2_GLA; // ITR2:"
+      }
+     ]
+    }
+   ]
+  },
+  {
+   "path": "Engine/Shaders/Private/LightData.ush",
+   "sha256": "cb4d0569a05d7022017a229f552340ea8f0a82d4b656e286c38b7a6e26a2f863",
+   "edits": [
+    {
+     "line": 159,
+     "remove": [],
+     "add": [
+      {
+       "text": "\tfloat  SpotCutoff; // ITR2: CM Games spot cutoff (dot(ToLight, Direction) > SpotCutoff), -65504 = off"
+      }
+     ]
+    },
+    {
+     "line": 295,
+     "remove": [
+      "ac53220e366a8131f282817a96f7a618ddc6b3f276255b0a3356b08cc0ff2146"
+     ],
+     "add": [
+      {
+       "text": "\t// ITR2: CM Games packs f16(cosOuter) | f16(Cutoff) << 16 in .x"
+      },
+      {
+       "text": "\treturn float2(f16tof32(asuint(In.SpotAnglesAndSourceRadiusPacked.x) & 0xFFFF), In.SpotAnglesAndSourceRadiusPacked.y);"
+      },
+      {
+       "ref": [
+        "Engine/Shaders/Private/BasePassPixelShader.usf",
+        240
+       ]
+      },
+      {
+       "text": ""
+      },
+      {
+       "text": "// ITR2:"
+      },
+      {
+       "text": "float GetLightSpotCutoff(FLocalLightData In)"
+      },
+      {
+       "ref": [
+        "Engine/Shaders/Private/BasePassPixelShader.usf",
+        229
+       ]
+      },
+      {
+       "text": "\treturn f16tof32(asuint(In.SpotAnglesAndSourceRadiusPacked.x) >> 16);"
+      }
+     ]
+    },
+    {
+     "line": 334,
+     "remove": [],
+     "add": [
+      {
+       "text": "\tOut.SpotCutoff = -65504.0f; // ITR2:"
+      }
+     ]
+    },
+    {
+     "line": 344,
+     "remove": [],
+     "add": [
+      {
+       "text": "\tOut.SpotCutoff\t\t\t\t= GetLightSpotCutoff(In); // ITR2:"
+      }
+     ]
+    },
+    {
+     "line": 477,
+     "remove": [],
+     "add": [
+      {
+       "text": "\tOut.SpotCutoff = -65504.0f; // ITR2:"
+      }
+     ]
+    },
+    {
+     "line": 509,
+     "remove": [],
+     "add": [
+      {
+       "text": "\tOut.SpotCutoff = -65504.0f; // ITR2:"
+      }
+     ]
+    }
+   ]
+  },
+  {
+   "path": "Engine/Shaders/Private/LightDataUniforms.ush",
+   "sha256": "4ec919e1f1055c19e65fde265da5671ab4dfd98f3cac9ccefd79b78e2dcc3226",
+   "edits": [
+    {
+     "line": 14,
+     "remove": [],
+     "add": [
+      {
+       "text": "\tOut.SpotCutoff = -65504.0f; // ITR2:"
+      }
+     ]
+    },
+    {
+     "line": 65,
+     "remove": [],
+     "add": [
+      {
+       "text": "\tOut.SpotCutoff = -65504.0f; // ITR2:"
+      }
+     ]
+    }
+   ]
+  },
+  {
+   "path": "Engine/Shaders/Private/LightFunctionAtlas/LightFunctionAtlasCommon.usf",
+   "sha256": "0a5ce5bc37066f9e5498382adf9659d71d5cc7224933b50eaa9f54398f46bf02",
+   "edits": [
+    {
+     "line": 32,
+     "remove": [
+      "501dc618d14c2710e3dab408efecd71b980d5b02d611051084078884cfaabbda"
+     ],
+     "add": [
+      {
+       "text": "FLightFunctionColor GetLocalLightFunctionCommon(float3 TranslatedWorldPosition, uint LightFunctionAtlasLightIndex, uint EyeIndex /* ITR2: per-eye matrix */)"
+      }
+     ]
+    },
+    {
+     "line": 40,
+     "remove": [
+      "59e725ac2352033ed8f55802831d6e7e2b4270ca0e6468d0ca4d4dbed305d8c5"
+     ],
+     "add": [
+      {
+       "text": "\tconst uint BaseBufferIndex = LightFunctionAtlasLightIndex * 9; // ITR2: CM layout, stride 9 = params + 2 eyes x 4 matrix rows (was 5). See FAtlasLightInfoData"
+      }
+     ]
+    },
+    {
+     "line": 54,
+     "remove": [
+      "bb734c13892f0a5a3dc08d9f178830049ad7ee66ce1c933b01e8afdf42b2b9d8",
+      "f72f37e06c221e9e1a3d95e2922740e7c51026efb66acb2ed41395838cd2e548",
+      "22fb8b7e77f55d607eb542e635e5f69f1086b9b2c624d83afc46af165a50b4f5",
+      "990b30df476deb652dc796cdd9690dcd5eaf9444869a20cdafb991d9f6e88fdf"
+     ],
+     "add": [
+      {
+       "text": "\t\tLightFunctionAtlas.LightInfoDataBuffer[BaseBufferIndex + EyeIndex * 4 + 1], // ITR2:"
+      },
+      {
+       "text": "\t\tLightFunctionAtlas.LightInfoDataBuffer[BaseBufferIndex + EyeIndex * 4 + 2],"
+      },
+      {
+       "text": "\t\tLightFunctionAtlas.LightInfoDataBuffer[BaseBufferIndex + EyeIndex * 4 + 3],"
+      },
+      {
+       "text": "\t\tLightFunctionAtlas.LightInfoDataBuffer[BaseBufferIndex + EyeIndex * 4 + 4]);"
+      }
+     ]
+    }
+   ]
+  },
+  {
+   "path": "Engine/Shaders/Private/Lumen/LumenSceneDirectLighting.ush",
+   "sha256": "1d3d133605ef945dac3d2f368db9b05a7b99eeead40a3e97b77581e2b3d980dc",
+   "edits": [
+    {
+     "line": 235,
+     "remove": [],
+     "add": [
+      {
+       "text": "\tDeferredLightData.SpotCutoff = -65504.0f; // ITR2:"
+      }
+     ]
+    }
+   ]
+  },
+  {
+   "path": "Engine/Shaders/Private/Lumen/LumenSceneDirectLightingShadowMask.usf",
+   "sha256": "e5288ae31690a09a1f9fd0b19a7ad2195a7d21c9994465577bc12d2525f3e47c",
+   "edits": [
+    {
+     "line": 148,
+     "remove": [
+      "8a9fad7a3c8aa3175af1c44ec09caae21d568cf96e173b379b0b0a8bae5740ae"
+     ],
+     "add": [
+      {
+       "text": "\t\t\t\tShadowMaskRay.ShadowFactor *= GetLocalLightFunctionCommon(TranslatedWorldPosition, DeferredLightUniforms.LightFunctionAtlasLightIndex, 0 /* ITR2: eye */);"
+      }
+     ]
+    }
+   ]
+  },
+  {
+   "path": "Engine/Shaders/Private/Lumen/LumenSceneDirectLightingStochastic.usf",
+   "sha256": "dbe64760fea68feae763d41bfdb496c4a256b9a25431362faf327b3b95b070d6",
+   "edits": [
+    {
+     "line": 118,
+     "remove": [
+      "600ee89a9bc1b43d7ea8970fe62b85412cbf405b61754d20ee690053938b8617"
+     ],
+     "add": [
+      {
+       "text": "\t\tLightTargetPDF.Diffuse *= GetLocalLightFunctionCommon(TranslatedWorldPosition, LightData.LightFunctionAtlasLightIndex, 0 /* ITR2: eye */);"
+      }
+     ]
+    },
+    {
+     "line": 1047,
+     "remove": [
+      "360477d0cdc890f97daae417a833678ea43d3eb611a38dd4409ab806b311c841"
+     ],
+     "add": [
+      {
+       "text": "\t\t\tShadowFactor *= GetLocalLightFunctionCommon(SampleSceneData.TranslatedWorldPosition, LumenLight.DeferredLightData.LightFunctionAtlasLightIndex, 0 /* ITR2: eye */);"
+      }
+     ]
+    }
+   ]
+  },
+  {
+   "path": "Engine/Shaders/Private/MegaLights/MegaLightsVolume.ush",
+   "sha256": "11d1ba39aca5ea558b232aea5781d4e03b8b667b019eaccb28bb3e0973d974e6",
+   "edits": [
+    {
+     "line": 124,
+     "remove": [
+      "c93c373cb03f2ce694e320281a35f3aa906aa0055f98a5e30d79033e9fadc4b0"
+     ],
+     "add": [
+      {
+       "text": "\t\tLightFunctionColor = GetLocalLightFunctionCommon(TranslatedWorldPosition, LightData.LightFunctionAtlasLightIndex, 0 /* ITR2: eye */);"
+      }
+     ]
+    }
+   ]
+  },
+  {
+   "path": "Engine/Shaders/Private/RayTracing/RayTracingLightingCommon.ush",
+   "sha256": "1287967e319af33a777c8b1eddc1e69ebff6756463fcfcfae2f5ac41efe6a079",
+   "edits": [
+    {
+     "line": 41,
+     "remove": [],
+     "add": [
+      {
+       "text": "\tLightData.SpotCutoff = -65504.0f; // ITR2:"
+      }
+     ]
+    }
+   ]
+  },
+  {
+   "path": "Engine/Shaders/Private/ReflectionEnvironmentComposite.ush",
+   "sha256": "4f20d06c38d768dcdd30cac59fb796ac4bf37105d8b729570e363df298885acb",
+   "edits": [
+    {
+     "line": 118,
+     "remove": [
+      "680fcc57383a26380c1380796296f3c867795b682e37800e7690ca4da0beee5f",
+      "e0b2f7ed6ebd91d175e6f9e5c3ff9775b4d7123286026b5a4e74647c015672f5",
+      "8137a7a8a69b57f961bb2af7e209893002d411a564268c37f98b77a462b761ae",
+      "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "4e710692260211f37779c7c0c0df8f2b5c131405b4419acba8d41a955f19fc2d",
+      "b134be71c28721749db3f9c3964df63b5dafb0ec41af5623678a01e82cdb69fc",
+      "9859df11a463145c99069a72321825cf5ddf269ca3a9b38a39e3070f5f265825",
+      "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "b8f3bf2d69e8fc3fd5a0e0fc7c0a8a30e5f01819c7f6155500529bab4916d1d5",
+      "750076130e7b0a7080b9bdcbf967194f8343d91445ca005b704b1b0fb028eedc",
+      "2fb6661b8a05050833248d80411bf94b59549c1296d58a3a4de0ecdb2fa1da7c",
+      "9d56d8643f08d82b9701dfbf59faca4d8e3f02519aa7807853612347438cd34e",
+      "c36d1ca0de7e09d40f0ebfb1422549a693b7705c97a82fd66850698c5e3614e3",
+      "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "7ce38b73d27ad736efd7b901f90c68e7b098e81fe8602b3efd911b2296576269",
+      "80b738a7c587f4a16861a1c2ea74917fa11d68cf10df69b07943bd0c7f64c0bf",
+      "31609426297325bdb28c86ab3ceeed4a3c438966733fd61b8aea00ee8b23b7bc",
+      "550e1b421d29a5bc59df13611b2de938a0bbf438d93becbb58f415ef9a914b0b",
+      "a3cddb838397738108150b6b8c477e38b799e7284ffe64fdac1996630cd4684b",
+      "dd7cfd4050fe715b3ed170d6827ab97ac3aecf14a9fcc20da8e97b8973309ba2",
+      "ae12f2c392a70f9c5dccaa485341dade2f180db5b2099ec12b14f8215f489ff2",
+      "1ad8393a3b1c1209de0d91a59bbf70e2c5c19f5b813a910458638811d9769d9b"
+     ],
+     "add": [
+      {
+       "text": "\t// ITR2: CM Games: SingleCaptureIndex is stored +1 (0 = none)"
+      },
+      {
+       "text": "\tif (SingleCaptureIndex > 0)"
+      },
+      {
+       "ref": [
+        "Engine/Shaders/Private/BasePassPixelShader.usf",
+        354
+       ]
+      },
+      {
+       "text": "\tuint ITR2_CaptureIdx = SingleCaptureIndex - 1;"
+      },
+      {
+       "text": "\t\tFDFVector3 SingleCaptureWorldPosition = MakeDFVector3(GetReflectionPositionAndRadius(ITR2_CaptureIdx).xyz, GetReflectionPositionLow(ITR2_CaptureIdx).xyz);"
+      },
+      {
+       "text": "\t\tfloat3 SingleCaptureTranslatedWorldPosition = DFFastAddDemote(SingleCaptureWorldPosition, ResolvedView.PreViewTranslation);"
+      },
+      {
+       "text": "\t\tfloat SingleCaptureRadius = GetReflectionPositionAndRadius(ITR2_CaptureIdx).w;"
+      },
+      {
+       "text": ""
+      },
+      {
+       "text": "\t\tfloat4 SingleCaptureOffsetAndAverageBrightness = GetReflectionCaptureOffsetAndAverageBrightness(ITR2_CaptureIdx);"
+      },
+      {
+       "text": "\t\tfloat SingleCaptureBrightness = GetReflectionCaptureProperties(ITR2_CaptureIdx).x;"
+      },
+      {
+       "text": "\t\tfloat SingleCaptureArrayIndex = GetReflectionCaptureProperties(ITR2_CaptureIdx).y;"
+      },
+      {
+       "text": ""
+      },
+      {
+       "text": "\t\t#define APPROXIMATE_CONTINUOUS_SINGLE_CAPTURE_PARALLAX 0"
+      },
+      {
+       "text": "\t\t#if APPROXIMATE_CONTINUOUS_SINGLE_CAPTURE_PARALLAX"
+      },
+      {
+       "text": "\t\t\tfloat3 CaptureVector = TranslatedWorldPosition - SingleCaptureTranslatedWorldPosition;"
+      },
+      {
+       "text": "\t\t\tfloat CaptureVectorLength = sqrt(dot(CaptureVector, CaptureVector));\t\t"
+      },
+      {
+       "text": "\t\t\tfloat NormalizedDistanceToCapture = saturate(CaptureVectorLength / SingleCaptureRadius);"
+      },
+      {
+       "text": ""
+      },
+      {
+       "text": "\t\t\tfloat UnusedDistanceAlpha = 0;"
+      },
+      {
+       "text": "\t\t\tProjectedCaptureVector = GetLookupVectorForSphereCapture(RayDirection, TranslatedWorldPosition, float4(SingleCaptureTranslatedWorldPosition, SingleCaptureRadius), NormalizedDistanceToCapture, SingleCaptureOffsetAndAverageBrightness.xyz, UnusedDistanceAlpha);"
+      },
+      {
+       "text": "\t\t\t"
+      },
+      {
+       "text": "\t\t\tfloat x = saturate(NormalizedDistanceToCapture);"
+      },
+      {
+       "text": "\t\t\tfloat DistanceAlpha = 1 - x * x * (3 - 2 * x);"
+      },
+      {
+       "text": "\t\t\t// Lerp between sphere parallax corrected and infinite based on distance to shape"
+      },
+      {
+       "text": "\t\t\tProjectedCaptureVector = lerp(RayDirection, normalize(ProjectedCaptureVector), DistanceAlpha);"
+      },
+      {
+       "ref": [
+        "Engine/Shaders/Private/BasePassPixelShader.usf",
+        53
+       ]
+      }
+     ]
+    },
+    {
+     "line": 141,
+     "remove": [
+      "12a3f14b0bd80e5bd1cba63fa444f5c695a31f24ebcb70a5f043fbb8e6834ff0"
+     ],
+     "add": [
+      {
+       "text": "\t\tfloat4 Sample = TextureCubeArraySampleLevel(ReflectionStruct.ReflectionCubemap, ReflectionStruct.ReflectionCubemapSampler, ProjectedCaptureVector, SingleCaptureArrayIndex, Mip);"
+      }
+     ]
+    },
+    {
+     "line": 143,
+     "remove": [
+      "f46860222f3aed4c590d84d14948c62de11286b6c444e5a7d0c7ec5845d0a455",
+      "05e5f2327212008b645c7129588b440619539f3bef847cba2285ad6b6325eea2"
+     ],
+     "add": [
+      {
+       "text": "\t\tSample.rgb *= SingleCaptureBrightness;"
+      },
+      {
+       "text": "\t\tImageBasedReflections = float4(Sample.rgb, 1 - Sample.a);"
+      }
+     ]
+    },
+    {
+     "line": 146,
+     "remove": [
+      "fa0cdafb6f25fc4aa4df0d5bf9b1f906e269618192020e66a4791fb2e5ec735d",
+      "2515f2fee587dbdca0db18db41d87f0df46ac878bfa1db2a78ea39c9492e8195",
+      "752cbcfd6e2746f2f930b2ec5541c9578a99c1cc11d871c09057b0d80125e1c9"
+     ],
+     "add": [
+      {
+       "text": "\t\tfloat AverageBrightness = SingleCaptureOffsetAndAverageBrightness.w;"
+      },
+      {
+       "text": "\t\tCompositedAverageBrightness.x += AverageBrightness * CompositedAverageBrightness.y;"
+      },
+      {
+       "text": "\t\tCompositedAverageBrightness.y = 0;"
+      },
+      {
+       "ref": [
+        "Engine/Shaders/Private/BasePassPixelShader.usf",
+        381
+       ]
+      },
+      {
+       "ref": [
+        "Engine/Shaders/Private/BasePassPixelShader.usf",
+        382
+       ]
+      },
+      {
+       "ref": [
+        "Engine/Shaders/Private/BasePassPixelShader.usf",
+        354
+       ]
+      },
+      {
+       "text": "\t\tImageBasedReflections = float4(0, 0, 0, 1);"
+      },
+      {
+       "ref": [
+        "Engine/Shaders/Private/BasePassPixelShader.usf",
+        381
+       ]
+      }
+     ]
+    }
+   ]
+  },
+  {
+   "path": "Engine/Shaders/Private/SceneData.ush",
+   "sha256": "e0e15ff3b450b344cac48450be55172c1ed3d68347e4252bb051a1b13c6baa9f",
+   "edits": [
+    {
+     "line": 74,
+     "remove": [
+      "79db49d7ec371123d3955de27366f3298a5d3c67c4ff1c3e84931d74e19224ec"
+     ],
+     "add": [
+      {
+       "text": "#define NUM_CUSTOM_PRIMITIVE_DATA 5u // ITR2: was 9u (CM Games: 5 float4s, slots 34..37 hold IndirectLightingCachePacked). Num float4s used for custom data. Must match FCustomPrimitiveData::NumCustomPrimitiveDataFloat4s in SceneTypes.h"
+      }
+     ]
+    },
+    {
+     "line": 462,
+     "remove": [
+      "a5c5594158fdef14651aaa1bb8a1d24f039e350d2e4f16f372945c6db469b04a"
+     ],
+     "add": [
+      {
+       "text": "\t\tPrimitiveData.CustomPrimitiveData[DataIndex] = LoadPrimitivePrimitiveSceneDataElement(PrimitiveIndex,  38 + DataIndex); // ITR2: was 34 (CM Games layout, stride stays 43)"
+      }
+     ]
+    }
+   ]
+  },
+  {
+   "path": "Engine/Shaders/Private/Substrate/SubstrateDeferredLighting.ush",
+   "sha256": "fbd4f6815b068636bbd5eacb1cf1cc395e20bdcb14fd50dfd7693e9628f92a34",
+   "edits": [
+    {
+     "line": 87,
+     "remove": [
+      "730592f75e7715de79585340b4b03c3aad3bc5d329522f9b2af59fedafa3b409"
+     ],
+     "add": [
+      {
+       "text": "\tconst FLightFunctionColor LightFunctionColor = GetLocalLightFunctionCommon(SubstrateShadowTermInputParameters.TranslatedWorldPosition, LightData.LightFunctionAtlasLightIndex, 0 /* ITR2: eye */);"
+      }
+     ]
+    }
+   ]
+  },
+  {
+   "path": "Engine/Shaders/Private/Substrate/SubstrateLightingCommon.ush",
+   "sha256": "4928a9b4c1881d270f36a2b9df6ccf4bb62f5f12f519c101f15fff9974c798d8",
+   "edits": [
+    {
+     "line": 146,
+     "remove": [
+      "5ec6443343037bd918c29df1aeec6cdd1818136ecb0311c321e2664d6c273654"
+     ],
+     "add": [
+      {
+       "text": "\t\t\t\tLightCommonMultiplier *= GetLocalLightFunctionCommon(TranslatedWorldPosition, LightData.LightFunctionAtlasLightIndex, 0 /* ITR2: eye */);"
+      }
+     ]
+    }
+   ]
+  },
+  {
+   "path": "Engine/Shaders/Private/VolumetricFog.usf",
+   "sha256": "c1c5802d96a73dbee6182d4fedfadf0875eb14dff68e6a223df8c5957c943bd9",
+   "edits": [
+    {
+     "line": 469,
+     "remove": [
+      "d21d44628405e1915879d969e7b285731f16f684a54720fcdc38f6511f638528"
+     ],
+     "add": [
+      {
+       "text": "\t\t\tLightFunctionColor = GetLocalLightFunctionCommon(TranslatedWorldPosition, LightData.LightFunctionAtlasLightIndex, 0 /* ITR2: eye */);"
+      }
+     ]
+    },
+    {
+     "line": 663,
+     "remove": [
+      "53583682e5d3590b8c352e3ee3939382a7aec40fc7bb7ac97209057707481770"
+     ],
+     "add": [
+      {
+       "text": "\t\treturn GetLocalLightFunctionCommon(TranslatedWorldPosition, DirectionalLightFunctionAtlasLightIndex, 0 /* ITR2: eye */);"
+      }
+     ]
+    },
+    {
+     "line": 1009,
+     "remove": [
+      "66a28582623a87a7ddb11bdbb69f4425272c82cb68750b595ed01fa0a97fd401"
+     ],
+     "add": [
+      {
+       "text": "\t\t\t\tLightFunctionColor = GetLocalLightFunctionCommon(TranslatedWorldPosition, LightData.LightFunctionAtlasLightIndex, 0 /* ITR2: eye */);"
+      }
+     ]
+    }
+   ]
+  },
+  {
+   "path": "Engine/Source/Runtime/Core/Public/UObject/RenderingObjectVersion.h",
+   "sha256": "268fa8a4e90033840c22f99599c021603b72f6d53efc51c6b9bfe4a8af44f894",
+   "edits": [
+    {
+     "line": 139,
+     "remove": [],
+     "add": [
+      {
+       "text": "\t\t// ITR2 (CM Games): extra precomputed visibility data in FPrecomputedVisibilityHandler (inserted before DeprecatedHighResSourceMesh, so latest becomes 50 like the game)"
+      },
+      {
+       "text": "\t\tITR2PrecomputedVisibilityExtra,"
+      },
+      {
+       "text": ""
+      }
+     ]
+    }
+   ]
+  },
+  {
+   "path": "Engine/Source/Runtime/Engine/Classes/Components/DirectionalLightComponent.h",
+   "sha256": "0ae2b34890b44aec0d85cb1ecb908e945aa92657ea9953731c529ddb930aa152",
+   "edits": [
+    {
+     "line": 146,
+     "remove": [],
+     "add": [
+      {
+       "text": "\t// ITR2: matches game schema"
+      },
+      {
+       "text": "\tUPROPERTY(EditAnywhere, BlueprintReadOnly, Category=Light, AdvancedDisplay)"
+      },
+      {
+       "text": "\tfloat LightDistanceAttenuationBegin = 0.0f;"
+      },
+      {
+       "text": ""
+      },
+      {
+       "text": "\t// ITR2: matches game schema"
+      },
+      {
+       "text": "\tUPROPERTY(EditAnywhere, BlueprintReadOnly, Category=Light, AdvancedDisplay)"
+      },
+      {
+       "text": "\tfloat LightDistanceAttenuationEnd = 0.0f;"
+      },
+      {
+       "text": ""
+      },
+      {
+       "text": "\t// ITR2: matches game schema"
+      },
+      {
+       "text": "\tUPROPERTY(EditAnywhere, BlueprintReadOnly, Category=Light, AdvancedDisplay)"
+      },
+      {
+       "text": "\tfloat LightDistanceAttenuationMinIntensity = 1.0f;"
+      },
+      {
+       "text": ""
+      },
+      {
+       "text": "\t// ITR2: matches game schema"
+      },
+      {
+       "text": "\tUPROPERTY(EditAnywhere, BlueprintReadOnly, Category=Light, AdvancedDisplay)"
+      },
+      {
+       "text": "\tfloat DistantLightMinThreshold = 0.0f;"
+      },
+      {
+       "text": ""
+      },
+      {
+       "text": "\t// ITR2: matches game schema"
+      },
+      {
+       "text": "\tUPROPERTY(EditAnywhere, BlueprintReadOnly, Category=Light, AdvancedDisplay)"
+      },
+      {
+       "text": "\tfloat DistantLightMaxThreshold = 0.0f;"
+      },
+      {
+       "text": ""
+      }
+     ]
+    }
+   ]
+  },
+  {
+   "path": "Engine/Source/Runtime/Engine/Classes/Components/PrimitiveComponent.h",
+   "sha256": "09d384427296c6cfdb2e2ee3ec18f2b1a712c8af2a2a8d30ac1ee585f774b16b",
+   "edits": [
+    {
+     "line": 487,
+     "remove": [],
+     "add": [
+      {
+       "text": "\t// ITR2: matches game schema"
+      },
+      {
+       "ref": [
+        "Engine/Source/Runtime/Engine/Classes/Components/PrimitiveComponent.h",
+        293
+       ]
+      },
+      {
+       "text": "\tuint8 bShouldBeExcludedFromLightmaps:1;"
+      },
+      {
+       "text": ""
+      }
+     ]
+    }
+   ]
+  },
+  {
+   "path": "Engine/Source/Runtime/Engine/Classes/Components/SceneCaptureComponent.h",
+   "sha256": "3fb000d4473d434f1d61080da331733ecd7f2a3b69381e859b73be6210803320",
+   "edits": [
+    {
+     "line": 90,
+     "remove": [],
+     "add": [
+      {
+       "text": "\t// ITR2: matches game schema"
+      },
+      {
+       "text": "\tUPROPERTY(EditAnywhere, BlueprintReadWrite, Category = SceneCapture, AdvancedDisplay)"
+      },
+      {
+       "text": "\tuint8 bShowEditorWidget : 1;"
+      },
+      {
+       "text": ""
+      }
+     ]
+    },
+    {
+     "line": 131,
+     "remove": [],
+     "add": [
+      {
+       "text": "\t// ITR2: matches game schema"
+      },
+      {
+       "text": "\tUPROPERTY(EditAnywhere, BlueprintReadWrite, Category=SceneCapture, AdvancedDisplay)"
+      },
+      {
+       "text": "\tfloat ViewDistanceScaleOverride = 0.0f;"
+      },
+      {
+       "text": ""
+      }
+     ]
+    }
+   ]
+  },
+  {
+   "path": "Engine/Source/Runtime/Engine/Classes/Components/SceneComponent.h",
+   "sha256": "9c0925169e17b66f6746e89a390efa8bfc4fa7caa33737e7082f09d689d88a76",
+   "edits": [
+    {
+     "line": 212,
+     "remove": [],
+     "add": [
+      {
+       "text": "\t// ITR2: matches game schema"
+      },
+      {
+       "ref": [
+        "Engine/Source/Runtime/Engine/Classes/GameFramework/Actor.h",
+        494
+       ]
+      },
+      {
+       "text": "\tuint8 bIsCookedForMobile:1;"
+      },
+      {
+       "text": ""
+      },
+      {
+       "text": "\t// ITR2: matches game schema"
+      },
+      {
+       "ref": [
+        "Engine/Source/Runtime/Engine/Classes/GameFramework/Actor.h",
+        494
+       ]
+      },
+      {
+       "text": "\tuint8 bIsCookedForDesktop:1;"
+      },
+      {
+       "text": ""
+      }
+     ]
+    }
+   ]
+  },
+  {
+   "path": "Engine/Source/Runtime/Engine/Classes/Components/SpotLightComponent.h",
+   "sha256": "08a5c573727da58211e1d6bb20e1a66b35beaccc786c367757f0439ac0f0756c",
+   "edits": [
+    {
+     "line": 28,
+     "remove": [],
+     "add": [
+      {
+       "text": "\t// ITR2: matches game schema"
+      },
+      {
+       "text": "\tUPROPERTY(EditAnywhere, BlueprintReadOnly, Category=Light, AdvancedDisplay)"
+      },
+      {
+       "text": "\tfloat NearClipPlane = 0.0f;"
+      },
+      {
+       "text": ""
+      }
+     ]
+    }
+   ]
+  },
+  {
+   "path": "Engine/Source/Runtime/Engine/Classes/Engine/Engine.h",
+   "sha256": "946c45ad2cc6dd1c7bee508d6b992c50e89deed900bdee5046aa42ae29933e67",
+   "edits": [
+    {
+     "line": 1420,
+     "remove": [],
+     "add": [
+      {
+       "text": "\t// ITR2: matches game schema"
+      },
+      {
+       "ref": [
+        "Engine/Source/Runtime/Engine/Classes/Components/DirectionalLightComponent.h",
+        51
+       ]
+      },
+      {
+       "text": "\tTObjectPtr<class UTexture2DArray> EnvironmentMaskShapesTexture;"
+      },
+      {
+       "text": ""
+      }
+     ]
+    }
+   ]
+  },
+  {
+   "path": "Engine/Source/Runtime/Engine/Classes/Engine/EngineTypes.h",
+   "sha256": "0ccf7b944e5500d1c2051c644374d384fe96168a59cb4b1c74367ed22051b9e8",
+   "edits": [
+    {
+     "line": 558,
+     "remove": [
+      "5c8cfa11171ef3eb70132ed11245eae1cf83c4d6132993e48c7a7812b3b143fb",
+      "b9031e83f5c6dbf57560dbf622376a184e98f4d0a8197983bf99380b9b156d96"
+     ],
+     "add": [
+      {
+       "text": "\t\tbChannel1(false)"
+      },
+      {
+       "text": "\t\t// ITR2: bChannel2 removed, the game has 2 lighting channels"
+      }
+     ]
+    },
+    {
+     "line": 570,
+     "remove": [
+      "fc7c6cd9e43add9e4e37fb83fdabdc2b418c86a161def25b6ea5e48d6cb4e4ad",
+      "8c0ca51c9653f5fc7e8ed132451f3a87c829199b19e2ea068c1fcc6f5253cfcb",
+      "8ef71cf2b27eca5216caf52b21c9492277bb2ef0f37a02e26486d08a7f671e32"
+     ],
+     "add": [
+      {
+       "text": "\t// ITR2: bChannel2 removed (game schema has only bChannel0/bChannel1)"
+      }
+     ]
+    },
+    {
+     "line": 579,
+     "remove": [
+      "6f2b4ae5e43e34cec79c4b08c90770fd0815f9599c8f6e5ceccab995f6b6a947"
+     ],
+     "add": [
+      {
+       "text": "\treturn (uint8)((Value.bChannel0 ? 1 : 0) | (Value.bChannel1 << 1)); // ITR2: no channel 2"
+      }
+     ]
+    },
+    {
+     "line": 905,
+     "remove": [],
+     "add": [
+      {
+       "text": "\tMSR_Force_1x1\t\tUMETA(DisplayName = \"Force 1x1\"), // ITR2: CM Games addition (between MSR_4x4 and MSR_Count)"
+      }
+     ]
+    },
+    {
+     "line": 2666,
+     "remove": [],
+     "add": [
+      {
+       "text": "\t// ITR2: matches game schema"
+      },
+      {
+       "ref": [
+        "Engine/Source/Runtime/Engine/Classes/Engine/EngineTypes.h",
+        2660
+       ]
+      },
+      {
+       "text": "\tuint8 bUseWithVolumetricLightmapsOnly:1;"
+      },
+      {
+       "text": ""
+      }
+     ]
+    },
+    {
+     "line": 2728,
+     "remove": [],
+     "add": [
+      {
+       "text": "\t\t, bUseWithVolumetricLightmapsOnly(false) // ITR2"
+      }
+     ]
+    }
+   ]
+  },
+  {
+   "path": "Engine/Source/Runtime/Engine/Classes/Engine/Level.h",
+   "sha256": "ccdd86f418f89133a445a455f758807ba9a163383e68269c28a7a2f9b63d06f3",
+   "edits": [
+    {
+     "line": 283,
+     "remove": [],
+     "add": [
+      {
+       "text": "\t// ITR2: CM Games additions, serialized when FRenderingObjectVersion >= ITR2PrecomputedVisibilityExtra (member names are ours)"
+      },
+      {
+       "text": "\tTArray<FCompressedVisibilityChunk> ITR2VisibilityChunks;"
+      },
+      {
+       "text": "\tFBox ITR2VisibilityBounds = FBox(ForceInit);"
+      },
+      {
+       "text": "\tuint32 ITR2VisibilityParam0 = 0;"
+      },
+      {
+       "text": "\tuint32 ITR2VisibilityParam1 = 0;"
+      },
+      {
+       "text": ""
+      }
+     ]
+    }
+   ]
+  },
+  {
+   "path": "Engine/Source/Runtime/Engine/Classes/Engine/RendererSettings.h",
+   "sha256": "bfc4801ef1745df0190c29d06d2dbd13418fb61f0b08bfaacc02046bc0266a7f",
+   "edits": [
+    {
+     "line": 405,
+     "remove": [],
+     "add": [
+      {
+       "text": "\t// ITR2: matches game schema"
+      },
+      {
+       "text": "\tUPROPERTY(config, EditAnywhere, Category=Textures)"
+      },
+      {
+       "text": "\tFSoftObjectPath EnvironmentMaskShapesTextureArrayPath;"
+      },
+      {
+       "text": ""
+      }
+     ]
+    }
+   ]
+  },
+  {
+   "path": "Engine/Source/Runtime/Engine/Classes/Engine/Scene.h",
+   "sha256": "66f5218bd8a37de4da0dec2dd6f4504b4edfdea1c1873b0a0d75698e59d232fa",
+   "edits": [
+    {
+     "line": 1100,
+     "remove": [],
+     "add": [
+      {
+       "text": "\t// ITR2: matches game schema"
+      },
+      {
+       "ref": [
+        "Engine/Source/Runtime/Engine/Classes/Engine/Scene.h",
+        676
+       ]
+      },
+      {
+       "text": "\tuint8 bOverride_IndirectLightingColorFar:1;"
+      },
+      {
+       "text": ""
+      },
+      {
+       "text": "\t// ITR2: matches game schema"
+      },
+      {
+       "ref": [
+        "Engine/Source/Runtime/Engine/Classes/Engine/Scene.h",
+        676
+       ]
+      },
+      {
+       "text": "\tuint8 bOverride_IndirectLightingIntensityFar:1;"
+      },
+      {
+       "text": ""
+      },
+      {
+       "text": "\t// ITR2: matches game schema"
+      },
+      {
+       "ref": [
+        "Engine/Source/Runtime/Engine/Classes/Engine/Scene.h",
+        676
+       ]
+      },
+      {
+       "text": "\tuint8 bOverride_IndirectLightingFarBegin:1;"
+      },
+      {
+       "text": ""
+      },
+      {
+       "text": "\t// ITR2: matches game schema"
+      },
+      {
+       "ref": [
+        "Engine/Source/Runtime/Engine/Classes/Engine/Scene.h",
+        676
+       ]
+      },
+      {
+       "text": "\tuint8 bOverride_IndirectLightingFarEnd:1;"
+      },
+      {
+       "text": ""
+      },
+      {
+       "text": "\t// ITR2: matches game schema"
+      },
+      {
+       "ref": [
+        "Engine/Source/Runtime/Engine/Classes/Engine/Scene.h",
+        676
+       ]
+      },
+      {
+       "text": "\tuint8 bOverride_IndirectLightingBrightnessThreshold:1;"
+      },
+      {
+       "text": ""
+      },
+      {
+       "text": "\t// ITR2: matches game schema"
+      },
+      {
+       "ref": [
+        "Engine/Source/Runtime/Engine/Classes/Engine/Scene.h",
+        676
+       ]
+      },
+      {
+       "text": "\tuint8 bOverride_IndirectLightingBrightnessSmoothness:1;"
+      },
+      {
+       "text": ""
+      }
+     ]
+    },
+    {
+     "line": 1633,
+     "remove": [],
+     "add": [
+      {
+       "text": ""
+      },
+      {
+       "text": "\t// ITR2: matches game schema"
+      },
+      {
+       "text": "\tUPROPERTY(interp, BlueprintReadWrite, AdvancedDisplay, Category=\"Global Illumination\", meta=(editcondition = \"bOverride_IndirectLightingColorFar\", HideAlphaChannel))"
+      },
+      {
+       "text": "\tFLinearColor IndirectLightingColorFar;"
+      },
+      {
+       "text": ""
+      },
+      {
+       "text": "\t// ITR2: matches game schema"
+      },
+      {
+       "text": "\tUPROPERTY(interp, BlueprintReadWrite, AdvancedDisplay, Category=\"Global Illumination\", meta=(editcondition = \"bOverride_IndirectLightingIntensityFar\"))"
+      },
+      {
+       "text": "\tfloat IndirectLightingIntensityFar;"
+      },
+      {
+       "text": ""
+      },
+      {
+       "text": "\t// ITR2: matches game schema"
+      },
+      {
+       "text": "\tUPROPERTY(interp, BlueprintReadWrite, AdvancedDisplay, Category=\"Global Illumination\", meta=(editcondition = \"bOverride_IndirectLightingFarBegin\"))"
+      },
+      {
+       "text": "\tfloat IndirectLightingFarBegin;"
+      },
+      {
+       "text": ""
+      },
+      {
+       "text": "\t// ITR2: matches game schema"
+      },
+      {
+       "text": "\tUPROPERTY(interp, BlueprintReadWrite, AdvancedDisplay, Category=\"Global Illumination\", meta=(editcondition = \"bOverride_IndirectLightingFarEnd\"))"
+      },
+      {
+       "text": "\tfloat IndirectLightingFarEnd;"
+      },
+      {
+       "text": ""
+      },
+      {
+       "text": "\t// ITR2: matches game schema"
+      },
+      {
+       "text": "\tUPROPERTY(interp, BlueprintReadWrite, AdvancedDisplay, Category=\"Global Illumination\", meta=(editcondition = \"bOverride_IndirectLightingBrightnessThreshold\"))"
+      },
+      {
+       "text": "\tfloat IndirectLightingBrightnessThreshold;"
+      },
+      {
+       "text": ""
+      },
+      {
+       "text": "\t// ITR2: matches game schema"
+      },
+      {
+       "text": "\tUPROPERTY(interp, BlueprintReadWrite, AdvancedDisplay, Category=\"Global Illumination\", meta=(editcondition = \"bOverride_IndirectLightingBrightnessSmoothness\"))"
+      },
+      {
+       "text": "\tfloat IndirectLightingBrightnessSmoothness;"
+      }
+     ]
+    }
+   ]
+  },
+  {
+   "path": "Engine/Source/Runtime/Engine/Classes/GameFramework/Actor.h",
+   "sha256": "5d5f0e76f627e34ab2a93d159d0e85ed6ddf74d14100b3fafaa3ae4328c9b204",
+   "edits": [
+    {
+     "line": 497,
+     "remove": [],
+     "add": [
+      {
+       "text": "\t// ITR2: matches game schema"
+      },
+      {
+       "ref": [
+        "Engine/Source/Runtime/Engine/Classes/GameFramework/Actor.h",
+        494
+       ]
+      },
+      {
+       "text": "\tuint8 bIsCookedForMobile:1;"
+      },
+      {
+       "text": ""
+      },
+      {
+       "text": "\t// ITR2: matches game schema"
+      },
+      {
+       "ref": [
+        "Engine/Source/Runtime/Engine/Classes/GameFramework/Actor.h",
+        494
+       ]
+      },
+      {
+       "text": "\tuint8 bIsCookedForDesktop:1;"
+      },
+      {
+       "text": ""
+      },
+      {
+       "text": "\t// ITR2: matches game schema"
+      },
+      {
+       "text": "\tUPROPERTY(EditAnywhere, AdvancedDisplay, Category=Lighting)"
+      },
+      {
+       "text": "\tuint8 bShouldAllPrimitivesBeExcludedFromLightmaps:1;"
+      },
+      {
+       "text": ""
+      }
+     ]
+    }
+   ]
+  },
+  {
+   "path": "Engine/Source/Runtime/Engine/Classes/GameFramework/WorldSettings.h",
+   "sha256": "55673236f1f18c5373eeb14b917485b96061e17dfad482ff2e0e1fd7d77a3e54",
+   "edits": [
+    {
+     "line": 362,
+     "remove": [],
+     "add": [
+      {
+       "text": "\t// ITR2: matches game schema"
+      },
+      {
+       "ref": [
+        "Engine/Source/Runtime/Engine/Classes/GameFramework/WorldSettings.h",
+        372
+       ]
+      },
+      {
+       "text": "\tfloat VisibilityMaxDrawDistanceScale = 1.0f;"
+      },
+      {
+       "text": ""
+      }
+     ]
+    }
+   ]
+  },
+  {
+   "path": "Engine/Source/Runtime/Engine/Private/Components/LightComponent.cpp",
+   "sha256": "bf77984d6e64912ec7933a1a338bc87805d169b157a2c56b005e03ec7c1221d4",
+   "edits": [
+    {
+     "line": 1271,
+     "remove": [
+      "e73ba8f9917ce980c1ed323ef4bfec53d3201a94879c855eca71cf22d6730474",
+      "31ab4dd9c9f8fd3415c695dfa3db630a7151b3e82f4c6880d7caba70317cd640"
+     ],
+     "add": [
+      {
+       "text": "\t\tbChannel1 != LightingChannels.bChannel1) // ITR2: bChannel2 ignored (struct has 2 channels)"
+      }
+     ]
+    },
+    {
+     "line": 1276,
+     "remove": [
+      "8d870a8493036afba85f588f31be03b6a42bcddf74552027b39a590f59064f66"
+     ],
+     "add": []
+    }
+   ]
+  },
+  {
+   "path": "Engine/Source/Runtime/Engine/Private/Components/PrimitiveComponent.cpp",
+   "sha256": "6af4955eef17e7950eb5bd95141047caf047042a370d47f771a957cc6953e962",
+   "edits": [
+    {
+     "line": 4169,
+     "remove": [
+      "e73ba8f9917ce980c1ed323ef4bfec53d3201a94879c855eca71cf22d6730474",
+      "31ab4dd9c9f8fd3415c695dfa3db630a7151b3e82f4c6880d7caba70317cd640"
+     ],
+     "add": [
+      {
+       "text": "\t\tbChannel1 != LightingChannels.bChannel1) // ITR2: bChannel2 ignored (struct has 2 channels)"
+      }
+     ]
+    },
+    {
+     "line": 4174,
+     "remove": [
+      "8d870a8493036afba85f588f31be03b6a42bcddf74552027b39a590f59064f66"
+     ],
+     "add": []
+    }
+   ]
+  },
+  {
+   "path": "Engine/Source/Runtime/Engine/Private/EnvironmentMask.cpp",
+   "create": true,
+   "edits": [
+    {
+     "line": 1,
+     "remove": [],
+     "add": [
+      {
+       "ref": [
+        "Engine/Shaders/Private/BasePassPixelShader.usf",
+        1
+       ]
+      },
+      {
+       "text": "// ITR2: constructors for the EnvironmentMask classes (data only)."
+      },
+      {
+       "text": ""
+      },
+      {
+       "text": "#include \"EnvironmentMaskActor.h\""
+      },
+      {
+       "text": "#include \"EnvironmentMaskComponent.h\""
+      },
+      {
+       "text": ""
+      },
+      {
+       "text": "AEnvironmentMaskActor::AEnvironmentMaskActor(const FObjectInitializer& ObjectInitializer)"
+      },
+      {
+       "ref": [
+        "Engine/Source/Runtime/Engine/Private/Components/LightComponent.cpp",
+        408
+       ]
+      },
+      {
+       "ref": [
+        "Engine/Shaders/Private/BasePassPixelShader.usf",
+        229
+       ]
+      },
+      {
+       "text": "\tEnvironmentMask = CreateDefaultSubobject<UEnvironmentMaskComponent>(TEXT(\"EnvironmentMask\"));"
+      },
+      {
+       "text": "\tRootComponent = EnvironmentMask;"
+      },
+      {
+       "ref": [
+        "Engine/Shaders/Private/BasePassPixelShader.usf",
+        240
+       ]
+      },
+      {
+       "text": ""
+      },
+      {
+       "text": "UEnvironmentMaskComponent::UEnvironmentMaskComponent(const FObjectInitializer& ObjectInitializer)"
+      },
+      {
+       "ref": [
+        "Engine/Source/Runtime/Engine/Private/Components/LightComponent.cpp",
+        408
+       ]
+      },
+      {
+       "text": "\t, Intensity(1.0f)"
+      },
+      {
+       "text": "\t, Smoothness(0.0f)"
+      },
+      {
+       "text": "\t, EdgeBias(0.0f)"
+      },
+      {
+       "text": "\t, BorderFadeBegin(0.0f)"
+      },
+      {
+       "text": "\t, BorderFadeEnd(0.0f)"
+      },
+      {
+       "text": "\t, TileU(1)"
+      },
+      {
+       "text": "\t, TileV(1)"
+      },
+      {
+       "text": "\t, ShapeIndex(0)"
+      },
+      {
+       "text": "\t, ChannelIndex(0)"
+      },
+      {
+       "text": "\t, CullingDistance(0.0f)"
+      },
+      {
+       "text": "\t, bBackfaceCullingEnabled(false)"
+      },
+      {
+       "ref": [
+        "Engine/Shaders/Private/BasePassPixelShader.usf",
+        229
+       ]
+      },
+      {
+       "ref": [
+        "Engine/Shaders/Private/BasePassPixelShader.usf",
+        240
+       ]
+      }
+     ]
+    }
+   ]
+  },
+  {
+   "path": "Engine/Source/Runtime/Engine/Private/Level.cpp",
+   "sha256": "0e5bab70745ba989f0acc293d04f4a5fdc665eb77b281e6a4d23aacae52631d8",
+   "edits": [
+    {
+     "line": 325,
+     "remove": [],
+     "add": [
+      {
+       "text": "\t// ITR2: CM Games extension of the handler, gated on the CM-inserted FRenderingObjectVersion entry"
+      },
+      {
+       "ref": [
+        "Engine/Source/Runtime/Engine/Private/Components/LightComponent.cpp",
+        554
+       ]
+      },
+      {
+       "text": "\tif (Ar.CustomVer(FRenderingObjectVersion::GUID) >= FRenderingObjectVersion::ITR2PrecomputedVisibilityExtra)"
+      },
+      {
+       "ref": [
+        "Engine/Shaders/Private/BasePassPixelShader.usf",
+        354
+       ]
+      },
+      {
+       "text": "\t\tAr << D.ITR2VisibilityChunks << D.ITR2VisibilityBounds << D.ITR2VisibilityParam0 << D.ITR2VisibilityParam1;"
+      },
+      {
+       "ref": [
+        "Engine/Shaders/Private/BasePassPixelShader.usf",
+        381
+       ]
+      }
+     ]
+    }
+   ]
+  },
+  {
+   "path": "Engine/Source/Runtime/Engine/Private/Materials/Material.cpp",
+   "sha256": "89b026b73ef7ac8b8948a3162f2adeac99a5cc7c8c8987db98ef040f5f0bd714",
+   "edits": [
+    {
+     "line": 1030,
+     "remove": [],
+     "add": [
+      {
+       "text": "\tbTranslucencyBackground = false; // ITR2"
+      },
+      {
+       "text": "\tbFullyRoughOnMobile = false; // ITR2"
+      },
+      {
+       "text": "\tbUseCheckerAsEdgeMaterialId = false; // ITR2"
+      },
+      {
+       "text": "\tShadingRateOnMobile = MSR_1x1; // ITR2"
+      }
+     ]
+    }
+   ]
+  },
+  {
+   "path": "Engine/Source/Runtime/Engine/Private/Materials/MaterialExpressionsITR2.cpp",
+   "create": true,
+   "edits": [
+    {
+     "line": 1,
+     "remove": [],
+     "add": [
+      {
+       "ref": [
+        "Engine/Shaders/Private/BasePassPixelShader.usf",
+        1
+       ]
+      },
+      {
+       "text": "// ITR2: stub implementations of material expression classes present in the Into the Radius 2 (CM Games) schema."
+      },
+      {
+       "text": "// They exist so that materials containing them load and compile. Their real shader behaviour is NOT implemented."
+      },
+      {
+       "text": ""
+      },
+      {
+       "text": "#include \"Materials/MaterialExpressionPlatformSwitch.h\""
+      },
+      {
+       "text": "#include \"Materials/MaterialExpressionResponsiveAA.h\""
+      },
+      {
+       "text": "#include \"Materials/MaterialExpressionSkyAtmosphereLuminance.h\""
+      },
+      {
+       "ref": [
+        "Engine/Source/Runtime/Engine/Private/Materials/Material.cpp",
+        66
+       ]
+      },
+      {
+       "text": ""
+      },
+      {
+       "text": "UMaterialExpressionPlatformSwitch::UMaterialExpressionPlatformSwitch(const FObjectInitializer& ObjectInitializer)"
+      },
+      {
+       "ref": [
+        "Engine/Source/Runtime/Engine/Private/Components/LightComponent.cpp",
+        408
+       ]
+      },
+      {
+       "ref": [
+        "Engine/Shaders/Private/BasePassPixelShader.usf",
+        229
+       ]
+      },
+      {
+       "ref": [
+        "Engine/Source/Runtime/Engine/Classes/Components/PrimitiveComponent.h",
+        379
+       ]
+      },
+      {
+       "text": "\tMenuCategories.Add(FText::FromString(TEXT(\"Utility\")));"
+      },
+      {
+       "ref": [
+        "Engine/Shaders/Private/BasePassPixelShader.usf",
+        9
+       ]
+      },
+      {
+       "ref": [
+        "Engine/Shaders/Private/BasePassPixelShader.usf",
+        240
+       ]
+      },
+      {
+       "text": ""
+      },
+      {
+       "text": "UMaterialExpressionResponsiveAA::UMaterialExpressionResponsiveAA(const FObjectInitializer& ObjectInitializer)"
+      },
+      {
+       "ref": [
+        "Engine/Source/Runtime/Engine/Private/Components/LightComponent.cpp",
+        408
+       ]
+      },
+      {
+       "text": "\t, ConstInput(0.0, 0.0)"
+      },
+      {
+       "ref": [
+        "Engine/Shaders/Private/BasePassPixelShader.usf",
+        229
+       ]
+      },
+      {
+       "text": "\tInputMode = EMaterialSceneAttributeInputMode::Coordinates;"
+      },
+      {
+       "ref": [
+        "Engine/Source/Runtime/Engine/Classes/Components/PrimitiveComponent.h",
+        379
+       ]
+      },
+      {
+       "text": "\tMenuCategories.Add(FText::FromString(TEXT(\"Utility\")));"
+      },
+      {
+       "ref": [
+        "Engine/Shaders/Private/BasePassPixelShader.usf",
+        9
+       ]
+      },
+      {
+       "ref": [
+        "Engine/Shaders/Private/BasePassPixelShader.usf",
+        240
+       ]
+      },
+      {
+       "text": ""
+      },
+      {
+       "text": "UMaterialExpressionSkyAtmosphereLightIlluminanceVS::UMaterialExpressionSkyAtmosphereLightIlluminanceVS(const FObjectInitializer& ObjectInitializer)"
+      },
+      {
+       "ref": [
+        "Engine/Source/Runtime/Engine/Private/Components/LightComponent.cpp",
+        408
+       ]
+      },
+      {
+       "text": "\t, LightIndex(0)"
+      },
+      {
+       "ref": [
+        "Engine/Shaders/Private/BasePassPixelShader.usf",
+        229
+       ]
+      },
+      {
+       "ref": [
+        "Engine/Source/Runtime/Engine/Classes/Components/PrimitiveComponent.h",
+        379
+       ]
+      },
+      {
+       "text": "\tMenuCategories.Add(FText::FromString(TEXT(\"Atmosphere\")));"
+      },
+      {
+       "ref": [
+        "Engine/Shaders/Private/BasePassPixelShader.usf",
+        9
+       ]
+      },
+      {
+       "ref": [
+        "Engine/Shaders/Private/BasePassPixelShader.usf",
+        240
+       ]
+      },
+      {
+       "text": ""
+      },
+      {
+       "text": "UMaterialExpressionSkyAtmosphereViewLuminanceVS::UMaterialExpressionSkyAtmosphereViewLuminanceVS(const FObjectInitializer& ObjectInitializer)"
+      },
+      {
+       "ref": [
+        "Engine/Source/Runtime/Engine/Private/Components/LightComponent.cpp",
+        408
+       ]
+      },
+      {
+       "ref": [
+        "Engine/Shaders/Private/BasePassPixelShader.usf",
+        229
+       ]
+      },
+      {
+       "ref": [
+        "Engine/Source/Runtime/Engine/Classes/Components/PrimitiveComponent.h",
+        379
+       ]
+      },
+      {
+       "text": "\tMenuCategories.Add(FText::FromString(TEXT(\"Atmosphere\")));"
+      },
+      {
+       "ref": [
+        "Engine/Shaders/Private/BasePassPixelShader.usf",
+        9
+       ]
+      },
+      {
+       "ref": [
+        "Engine/Shaders/Private/BasePassPixelShader.usf",
+        240
+       ]
+      },
+      {
+       "text": ""
+      },
+      {
+       "text": "UMaterialExpressionSkyAtmosphereViewLuminancePS::UMaterialExpressionSkyAtmosphereViewLuminancePS(const FObjectInitializer& ObjectInitializer)"
+      },
+      {
+       "ref": [
+        "Engine/Source/Runtime/Engine/Private/Components/LightComponent.cpp",
+        408
+       ]
+      },
+      {
+       "ref": [
+        "Engine/Shaders/Private/BasePassPixelShader.usf",
+        229
+       ]
+      },
+      {
+       "ref": [
+        "Engine/Source/Runtime/Engine/Classes/Components/PrimitiveComponent.h",
+        379
+       ]
+      },
+      {
+       "text": "\tMenuCategories.Add(FText::FromString(TEXT(\"Atmosphere\")));"
+      },
+      {
+       "ref": [
+        "Engine/Shaders/Private/BasePassPixelShader.usf",
+        9
+       ]
+      },
+      {
+       "ref": [
+        "Engine/Shaders/Private/BasePassPixelShader.usf",
+        240
+       ]
+      },
+      {
+       "text": ""
+      },
+      {
+       "ref": [
+        "Engine/Source/Runtime/Engine/Classes/Components/DirectionalLightComponent.h",
+        348
+       ]
+      },
+      {
+       "text": "// ITR2: stub, passes the Desktop input through (constant 0 if unconnected)"
+      },
+      {
+       "text": "int32 UMaterialExpressionPlatformSwitch::Compile(FMaterialCompiler* Compiler, int32 OutputIndex)"
+      },
+      {
+       "ref": [
+        "Engine/Shaders/Private/BasePassPixelShader.usf",
+        229
+       ]
+      },
+      {
+       "text": "\tif (Desktop.GetTracedInput().Expression)"
+      },
+      {
+       "ref": [
+        "Engine/Shaders/Private/BasePassPixelShader.usf",
+        354
+       ]
+      },
+      {
+       "text": "\t\treturn Desktop.Compile(Compiler);"
+      },
+      {
+       "ref": [
+        "Engine/Shaders/Private/BasePassPixelShader.usf",
+        381
+       ]
+      },
+      {
+       "text": "\treturn Compiler->Constant(0.f);"
+      },
+      {
+       "ref": [
+        "Engine/Shaders/Private/BasePassPixelShader.usf",
+        240
+       ]
+      },
+      {
+       "text": ""
+      },
+      {
+       "text": "void UMaterialExpressionPlatformSwitch::GetCaption(TArray<FString>& OutCaptions) const"
+      },
+      {
+       "ref": [
+        "Engine/Shaders/Private/BasePassPixelShader.usf",
+        229
+       ]
+      },
+      {
+       "text": "\tOutCaptions.Add(TEXT(\"Platform Switch\"));"
+      },
+      {
+       "ref": [
+        "Engine/Shaders/Private/BasePassPixelShader.usf",
+        240
+       ]
+      },
+      {
+       "text": ""
+      },
+      {
+       "text": "FName UMaterialExpressionPlatformSwitch::GetInputName(int32 InputIndex) const"
+      },
+      {
+       "ref": [
+        "Engine/Shaders/Private/BasePassPixelShader.usf",
+        229
+       ]
+      },
+      {
+       "text": "\treturn InputIndex == 0 ? FName(TEXT(\"Desktop\")) : (InputIndex == 1 ? FName(TEXT(\"Mobile\")) : NAME_None);"
+      },
+      {
+       "ref": [
+        "Engine/Shaders/Private/BasePassPixelShader.usf",
+        240
+       ]
+      },
+      {
+       "text": ""
+      },
+      {
+       "text": "// ITR2: stub, passes the Input (or ConstInput) through"
+      },
+      {
+       "text": "int32 UMaterialExpressionResponsiveAA::Compile(FMaterialCompiler* Compiler, int32 OutputIndex)"
+      },
+      {
+       "ref": [
+        "Engine/Shaders/Private/BasePassPixelShader.usf",
+        229
+       ]
+      },
+      {
+       "text": "\tif (Input.GetTracedInput().Expression)"
+      },
+      {
+       "ref": [
+        "Engine/Shaders/Private/BasePassPixelShader.usf",
+        354
+       ]
+      },
+      {
+       "text": "\t\treturn Input.Compile(Compiler);"
+      },
+      {
+       "ref": [
+        "Engine/Shaders/Private/BasePassPixelShader.usf",
+        381
+       ]
+      },
+      {
+       "text": "\treturn Compiler->Constant2((float)ConstInput.X, (float)ConstInput.Y);"
+      },
+      {
+       "ref": [
+        "Engine/Shaders/Private/BasePassPixelShader.usf",
+        240
+       ]
+      },
+      {
+       "text": ""
+      },
+      {
+       "text": "void UMaterialExpressionResponsiveAA::GetCaption(TArray<FString>& OutCaptions) const"
+      },
+      {
+       "ref": [
+        "Engine/Shaders/Private/BasePassPixelShader.usf",
+        229
+       ]
+      },
+      {
+       "text": "\tOutCaptions.Add(TEXT(\"Responsive AA\"));"
+      },
+      {
+       "ref": [
+        "Engine/Shaders/Private/BasePassPixelShader.usf",
+        240
+       ]
+      },
+      {
+       "text": ""
+      },
+      {
+       "text": "// ITR2: stubs, return float3(0)"
+      },
+      {
+       "text": "int32 UMaterialExpressionSkyAtmosphereLightIlluminanceVS::Compile(FMaterialCompiler* Compiler, int32 OutputIndex)"
+      },
+      {
+       "ref": [
+        "Engine/Shaders/Private/BasePassPixelShader.usf",
+        229
+       ]
+      },
+      {
+       "text": "\treturn Compiler->Constant3(0.f, 0.f, 0.f);"
+      },
+      {
+       "ref": [
+        "Engine/Shaders/Private/BasePassPixelShader.usf",
+        240
+       ]
+      },
+      {
+       "text": ""
+      },
+      {
+       "text": "void UMaterialExpressionSkyAtmosphereLightIlluminanceVS::GetCaption(TArray<FString>& OutCaptions) const"
+      },
+      {
+       "ref": [
+        "Engine/Shaders/Private/BasePassPixelShader.usf",
+        229
+       ]
+      },
+      {
+       "text": "\tOutCaptions.Add(TEXT(\"SkyAtmosphereLightIlluminanceVS\"));"
+      },
+      {
+       "ref": [
+        "Engine/Shaders/Private/BasePassPixelShader.usf",
+        240
+       ]
+      },
+      {
+       "text": ""
+      },
+      {
+       "text": "int32 UMaterialExpressionSkyAtmosphereViewLuminanceVS::Compile(FMaterialCompiler* Compiler, int32 OutputIndex)"
+      },
+      {
+       "ref": [
+        "Engine/Shaders/Private/BasePassPixelShader.usf",
+        229
+       ]
+      },
+      {
+       "text": "\treturn Compiler->Constant3(0.f, 0.f, 0.f);"
+      },
+      {
+       "ref": [
+        "Engine/Shaders/Private/BasePassPixelShader.usf",
+        240
+       ]
+      },
+      {
+       "text": ""
+      },
+      {
+       "text": "void UMaterialExpressionSkyAtmosphereViewLuminanceVS::GetCaption(TArray<FString>& OutCaptions) const"
+      },
+      {
+       "ref": [
+        "Engine/Shaders/Private/BasePassPixelShader.usf",
+        229
+       ]
+      },
+      {
+       "text": "\tOutCaptions.Add(TEXT(\"SkyAtmosphereViewLuminanceVS\"));"
+      },
+      {
+       "ref": [
+        "Engine/Shaders/Private/BasePassPixelShader.usf",
+        240
+       ]
+      },
+      {
+       "text": ""
+      },
+      {
+       "text": "int32 UMaterialExpressionSkyAtmosphereViewLuminancePS::Compile(FMaterialCompiler* Compiler, int32 OutputIndex)"
+      },
+      {
+       "ref": [
+        "Engine/Shaders/Private/BasePassPixelShader.usf",
+        229
+       ]
+      },
+      {
+       "text": "\treturn Compiler->Constant3(0.f, 0.f, 0.f);"
+      },
+      {
+       "ref": [
+        "Engine/Shaders/Private/BasePassPixelShader.usf",
+        240
+       ]
+      },
+      {
+       "text": ""
+      },
+      {
+       "text": "void UMaterialExpressionSkyAtmosphereViewLuminancePS::GetCaption(TArray<FString>& OutCaptions) const"
+      },
+      {
+       "ref": [
+        "Engine/Shaders/Private/BasePassPixelShader.usf",
+        229
+       ]
+      },
+      {
+       "text": "\tOutCaptions.Add(TEXT(\"SkyAtmosphereViewLuminancePS\"));"
+      },
+      {
+       "ref": [
+        "Engine/Shaders/Private/BasePassPixelShader.usf",
+        240
+       ]
+      },
+      {
+       "ref": [
+        "Engine/Source/Runtime/Engine/Classes/Components/DirectionalLightComponent.h",
+        352
+       ]
+      }
+     ]
+    }
+   ]
+  },
+  {
+   "path": "Engine/Source/Runtime/Engine/Private/Materials/MaterialShared.cpp",
+   "sha256": "46aaf4d12d0ac537caa7cbea0e7954625b28d7ba9d9faa00d08145c4ddb77b5a",
+   "edits": [
+    {
+     "line": 5108,
+     "remove": [],
+     "add": [
+      {
+       "text": "\t,bOverride_bFullyRough(false) // ITR2"
+      },
+      {
+       "text": "\t,bOverride_bFullyRoughOnMobile(false) // ITR2"
+      }
+     ]
+    },
+    {
+     "line": 5119,
+     "remove": [],
+     "add": [
+      {
+       "text": "\t,bFullyRough(false) // ITR2"
+      },
+      {
+       "text": "\t,bFullyRoughOnMobile(false) // ITR2"
+      }
+     ]
+    },
+    {
+     "line": 5141,
+     "remove": [],
+     "add": [
+      {
+       "text": "\t\tbOverride_bFullyRough == Other.bOverride_bFullyRough && // ITR2"
+      },
+      {
+       "text": "\t\tbOverride_bFullyRoughOnMobile == Other.bOverride_bFullyRoughOnMobile && // ITR2"
+      }
+     ]
+    },
+    {
+     "line": 5155,
+     "remove": [],
+     "add": [
+      {
+       "text": "\t\tbFullyRough == Other.bFullyRough && // ITR2"
+      },
+      {
+       "text": "\t\tbFullyRoughOnMobile == Other.bFullyRoughOnMobile && // ITR2"
+      }
+     ]
+    }
+   ]
+  },
+  {
+   "path": "Engine/Source/Runtime/Engine/Private/PrimitiveUniformShaderParameters.cpp",
+   "sha256": "504086be573b836488ced123745fc088936d461713b9fcd4f6c10ccd57eb1af5",
+   "edits": [
+    {
+     "line": 178,
+     "remove": [
+      "ecee256352a3cd2f3af313b18e148862f7b5d6aec18b72162e0110bcbe596ebb"
+     ],
+     "add": [
+      {
+       "text": "\t// ITR2: CM Games layout. Slots 34..37 hold IndirectLightingCachePacked[4]; custom data moves to 38..42 (stride stays 43)."
+      },
+      {
+       "text": "\tfor (int32 PackedIndex = 0; PackedIndex < 4; ++PackedIndex)"
+      },
+      {
+       "ref": [
+        "Engine/Shaders/Private/BasePassPixelShader.usf",
+        354
+       ]
+      },
+      {
+       "text": "\t\tOutData[34 + PackedIndex] = PrimitiveUniformShaderParameters.IndirectLightingCachePacked[PackedIndex];"
+      },
+      {
+       "ref": [
+        "Engine/Shaders/Private/BasePassPixelShader.usf",
+        381
+       ]
+      },
+      {
+       "text": "\tconst int32 CustomPrimitiveDataStartIndex = 38; // ITR2: was 34"
+      }
+     ]
+    }
+   ]
+  },
+  {
+   "path": "Engine/Source/Runtime/Engine/Private/SceneManagement.cpp",
+   "sha256": "71c7320c130b2123730319818c98a26601b19d11b3406983e46118935e61ae7a",
+   "edits": [
+    {
+     "line": 1325,
+     "remove": [],
+     "add": [
+      {
+       "text": ""
+      },
+      {
+       "text": "\t// ITR2: CM Games environment mask (layout match only; safe dummies)"
+      },
+      {
+       "text": "\tEnvironmentMaskSdfTexture = GBlackArrayTexture->TextureRHI;"
+      },
+      {
+       "text": "\tEnvironmentMaskSdfSampler = TStaticSamplerState<SF_Bilinear, AM_Clamp, AM_Clamp, AM_Clamp>::GetRHI();"
+      },
+      {
+       "text": "\tEnvironmentMaskData = GBlackFloat4StructuredBufferWithSRV->ShaderResourceViewRHI;"
+      }
+     ]
+    }
+   ]
+  },
+  {
+   "path": "Engine/Source/Runtime/Engine/Public/EnvironmentMaskActor.h",
+   "create": true,
+   "edits": [
+    {
+     "line": 1,
+     "remove": [],
+     "add": [
+      {
+       "ref": [
+        "Engine/Shaders/Private/BasePassPixelShader.usf",
+        1
+       ]
+      },
+      {
+       "text": "// ITR2: class added to match the Into the Radius 2 (CM Games) schema. Data only, no rendering behaviour."
+      },
+      {
+       "text": ""
+      },
+      {
+       "ref": [
+        "Engine/Shaders/Private/DeferredLightingCommon.ush",
+        7
+       ]
+      },
+      {
+       "text": ""
+      },
+      {
+       "ref": [
+        "Engine/Source/Runtime/Engine/Classes/Components/DirectionalLightComponent.h",
+        5
+       ]
+      },
+      {
+       "ref": [
+        "Engine/Source/Runtime/Engine/Classes/Components/PrimitiveComponent.h",
+        19
+       ]
+      },
+      {
+       "text": "#include \"EnvironmentMaskActor.generated.h\""
+      },
+      {
+       "text": ""
+      },
+      {
+       "text": "class UEnvironmentMaskComponent;"
+      },
+      {
+       "text": ""
+      },
+      {
+       "ref": [
+        "Engine/Source/Runtime/Engine/Classes/Engine/Level.h",
+        400
+       ]
+      },
+      {
+       "text": "class AEnvironmentMaskActor : public AActor"
+      },
+      {
+       "ref": [
+        "Engine/Shaders/Private/BasePassPixelShader.usf",
+        229
+       ]
+      },
+      {
+       "ref": [
+        "Engine/Source/Runtime/Engine/Classes/Components/DirectionalLightComponent.h",
+        20
+       ]
+      },
+      {
+       "text": ""
+      },
+      {
+       "text": "\t// ITR2: object property of the game schema; the exact class is not in the usmap, a mask component is assumed"
+      },
+      {
+       "text": "\tUPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = EnvironmentMask)"
+      },
+      {
+       "text": "\tTObjectPtr<UEnvironmentMaskComponent> EnvironmentMask;"
+      },
+      {
+       "ref": [
+        "Engine/Shaders/Private/LightData.ush",
+        23
+       ]
+      }
+     ]
+    }
+   ]
+  },
+  {
+   "path": "Engine/Source/Runtime/Engine/Public/EnvironmentMaskComponent.h",
+   "create": true,
+   "edits": [
+    {
+     "line": 1,
+     "remove": [],
+     "add": [
+      {
+       "ref": [
+        "Engine/Shaders/Private/BasePassPixelShader.usf",
+        1
+       ]
+      },
+      {
+       "text": "// ITR2: class added to match the Into the Radius 2 (CM Games) schema. Data only, no rendering behaviour."
+      },
+      {
+       "text": ""
+      },
+      {
+       "ref": [
+        "Engine/Shaders/Private/DeferredLightingCommon.ush",
+        7
+       ]
+      },
+      {
+       "text": ""
+      },
+      {
+       "ref": [
+        "Engine/Source/Runtime/Engine/Classes/Components/DirectionalLightComponent.h",
+        5
+       ]
+      },
+      {
+       "ref": [
+        "Engine/Source/Runtime/Engine/Classes/Components/PrimitiveComponent.h",
+        16
+       ]
+      },
+      {
+       "text": "#include \"EnvironmentMaskComponent.generated.h\""
+      },
+      {
+       "text": ""
+      },
+      {
+       "text": "UCLASS(MinimalAPI, ClassGroup = Rendering, meta = (BlueprintSpawnableComponent))"
+      },
+      {
+       "text": "class UEnvironmentMaskComponent : public USceneComponent"
+      },
+      {
+       "ref": [
+        "Engine/Shaders/Private/BasePassPixelShader.usf",
+        229
+       ]
+      },
+      {
+       "ref": [
+        "Engine/Source/Runtime/Engine/Classes/Components/DirectionalLightComponent.h",
+        20
+       ]
+      },
+      {
+       "text": ""
+      },
+      {
+       "text": "\t// ITR2: property order matches the game schema"
+      },
+      {
+       "text": "\tUPROPERTY(EditAnywhere, BlueprintReadWrite, Category = EnvironmentMask)"
+      },
+      {
+       "ref": [
+        "Engine/Source/Runtime/Engine/Classes/Engine/Scene.h",
+        259
+       ]
+      },
+      {
+       "text": ""
+      },
+      {
+       "text": "\tUPROPERTY(EditAnywhere, BlueprintReadWrite, Category = EnvironmentMask)"
+      },
+      {
+       "text": "\tfloat Smoothness;"
+      },
+      {
+       "text": ""
+      },
+      {
+       "text": "\tUPROPERTY(EditAnywhere, BlueprintReadWrite, Category = EnvironmentMask)"
+      },
+      {
+       "text": "\tfloat EdgeBias;"
+      },
+      {
+       "text": ""
+      },
+      {
+       "text": "\tUPROPERTY(EditAnywhere, BlueprintReadWrite, Category = EnvironmentMask)"
+      },
+      {
+       "text": "\tfloat BorderFadeBegin;"
+      },
+      {
+       "text": ""
+      },
+      {
+       "text": "\tUPROPERTY(EditAnywhere, BlueprintReadWrite, Category = EnvironmentMask)"
+      },
+      {
+       "text": "\tfloat BorderFadeEnd;"
+      },
+      {
+       "text": ""
+      },
+      {
+       "text": "\tUPROPERTY(EditAnywhere, BlueprintReadWrite, Category = EnvironmentMask)"
+      },
+      {
+       "text": "\tint32 TileU;"
+      },
+      {
+       "text": ""
+      },
+      {
+       "text": "\tUPROPERTY(EditAnywhere, BlueprintReadWrite, Category = EnvironmentMask)"
+      },
+      {
+       "text": "\tint32 TileV;"
+      },
+      {
+       "text": ""
+      },
+      {
+       "text": "\tUPROPERTY(EditAnywhere, BlueprintReadWrite, Category = EnvironmentMask)"
+      },
+      {
+       "text": "\tint32 ShapeIndex;"
+      },
+      {
+       "text": ""
+      },
+      {
+       "text": "\tUPROPERTY(EditAnywhere, BlueprintReadWrite, Category = EnvironmentMask)"
+      },
+      {
+       "text": "\tint32 ChannelIndex;"
+      },
+      {
+       "text": ""
+      },
+      {
+       "text": "\tUPROPERTY(EditAnywhere, BlueprintReadWrite, Category = EnvironmentMask)"
+      },
+      {
+       "text": "\tfloat CullingDistance;"
+      },
+      {
+       "text": ""
+      },
+      {
+       "text": "\tUPROPERTY(EditAnywhere, BlueprintReadWrite, Category = EnvironmentMask)"
+      },
+      {
+       "text": "\tbool bBackfaceCullingEnabled;"
+      },
+      {
+       "ref": [
+        "Engine/Shaders/Private/LightData.ush",
+        23
+       ]
+      }
+     ]
+    }
+   ]
+  },
+  {
+   "path": "Engine/Source/Runtime/Engine/Public/MaterialCachedData.h",
+   "sha256": "a7b3a55af0761059bbd708989f7c75cefdbc985ad140348ee2d5068fa4e42013",
+   "edits": [
+    {
+     "line": 101,
+     "remove": [],
+     "add": [
+      {
+       "text": ""
+      },
+      {
+       "text": "\t// ITR2: matches game schema"
+      },
+      {
+       "ref": [
+        "Engine/Source/Runtime/Engine/Classes/Components/DirectionalLightComponent.h",
+        51
+       ]
+      },
+      {
+       "text": "\tuint8 bUseOnMobile:1 = false;"
+      },
+      {
+       "text": ""
+      },
+      {
+       "text": "\t// ITR2: matches game schema"
+      },
+      {
+       "ref": [
+        "Engine/Source/Runtime/Engine/Classes/Components/DirectionalLightComponent.h",
+        51
+       ]
+      },
+      {
+       "text": "\tuint8 bUseOnDesktop:1 = false;"
+      }
+     ]
+    }
+   ]
+  },
+  {
+   "path": "Engine/Source/Runtime/Engine/Public/Materials/Material.h",
+   "sha256": "e86dce80c85090d09b7bc10d562a95aa77d1af520f2bb01129a94b68add9bc47",
+   "edits": [
+    {
+     "line": 575,
+     "remove": [],
+     "add": [
+      {
+       "text": "\t// ITR2: matches game schema"
+      },
+      {
+       "ref": [
+        "Engine/Source/Runtime/Engine/Public/Materials/Material.h",
+        633
+       ]
+      },
+      {
+       "text": "\tuint8 bTranslucencyBackground : 1;"
+      },
+      {
+       "text": ""
+      }
+     ]
+    },
+    {
+     "line": 845,
+     "remove": [],
+     "add": [
+      {
+       "text": "\t// ITR2: matches game schema"
+      },
+      {
+       "ref": [
+        "Engine/Source/Runtime/Engine/Public/Materials/Material.h",
+        842
+       ]
+      },
+      {
+       "text": "\tuint8 bFullyRoughOnMobile : 1;"
+      },
+      {
+       "text": ""
+      }
+     ]
+    },
+    {
+     "line": 899,
+     "remove": [],
+     "add": [
+      {
+       "text": "\t// ITR2: matches game schema"
+      },
+      {
+       "ref": [
+        "Engine/Source/Runtime/Engine/Public/Materials/Material.h",
+        842
+       ]
+      },
+      {
+       "text": "\tuint8 bUseCheckerAsEdgeMaterialId : 1;"
+      },
+      {
+       "text": ""
+      }
+     ]
+    },
+    {
+     "line": 919,
+     "remove": [],
+     "add": [
+      {
+       "text": "\t// ITR2: matches game schema"
+      },
+      {
+       "ref": [
+        "Engine/Source/Runtime/Engine/Public/Materials/Material.h",
+        486
+       ]
+      },
+      {
+       "text": "\tTEnumAsByte<EMaterialShadingRate> ShadingRateOnMobile;"
+      },
+      {
+       "text": ""
+      }
+     ]
+    }
+   ]
+  },
+  {
+   "path": "Engine/Source/Runtime/Engine/Public/Materials/MaterialExpressionPlatformSwitch.h",
+   "create": true,
+   "edits": [
+    {
+     "line": 1,
+     "remove": [],
+     "add": [
+      {
+       "ref": [
+        "Engine/Shaders/Private/BasePassPixelShader.usf",
+        1
+       ]
+      },
+      {
+       "text": "// ITR2: class added to match the Into the Radius 2 (CM Games) schema."
+      },
+      {
+       "text": ""
+      },
+      {
+       "ref": [
+        "Engine/Shaders/Private/DeferredLightingCommon.ush",
+        7
+       ]
+      },
+      {
+       "text": ""
+      },
+      {
+       "ref": [
+        "Engine/Source/Runtime/Engine/Classes/Components/DirectionalLightComponent.h",
+        5
+       ]
+      },
+      {
+       "ref": [
+        "Engine/Source/Runtime/Engine/Classes/Components/DirectionalLightComponent.h",
+        6
+       ]
+      },
+      {
+       "ref": [
+        "Engine/Source/Runtime/Engine/Public/Materials/Material.h",
+        18
+       ]
+      },
+      {
+       "text": "#include \"MaterialExpressionPlatformSwitch.generated.h\""
+      },
+      {
+       "text": ""
+      },
+      {
+       "ref": [
+        "Engine/Source/Runtime/Engine/Public/Materials/MaterialExpressionSingleLayerWaterMaterialOutput.h",
+        11
+       ]
+      },
+      {
+       "text": "class UMaterialExpressionPlatformSwitch : public UMaterialExpression"
+      },
+      {
+       "ref": [
+        "Engine/Shaders/Private/BasePassPixelShader.usf",
+        229
+       ]
+      },
+      {
+       "ref": [
+        "Engine/Source/Runtime/Engine/Classes/Components/DirectionalLightComponent.h",
+        20
+       ]
+      },
+      {
+       "text": ""
+      },
+      {
+       "text": "\t// ITR2: property order matches the game schema (Desktop, Mobile)"
+      },
+      {
+       "ref": [
+        "Engine/Source/Runtime/Engine/Classes/Components/DirectionalLightComponent.h",
+        51
+       ]
+      },
+      {
+       "text": "\tFExpressionInput Desktop;"
+      },
+      {
+       "text": ""
+      },
+      {
+       "ref": [
+        "Engine/Source/Runtime/Engine/Classes/Components/DirectionalLightComponent.h",
+        51
+       ]
+      },
+      {
+       "text": "\tFExpressionInput Mobile;"
+      },
+      {
+       "text": ""
+      },
+      {
+       "ref": [
+        "Engine/Source/Runtime/Engine/Classes/Components/DirectionalLightComponent.h",
+        348
+       ]
+      },
+      {
+       "ref": [
+        "Engine/Source/Runtime/Engine/Public/Materials/MaterialExpressionSingleLayerWaterMaterialOutput.h",
+        34
+       ]
+      },
+      {
+       "text": "\t// ITR2: stub Compile (passes Desktop through), the real CM behaviour is unknown"
+      },
+      {
+       "ref": [
+        "Engine/Source/Runtime/Engine/Public/Materials/MaterialExpressionSingleLayerWaterMaterialOutput.h",
+        35
+       ]
+      },
+      {
+       "ref": [
+        "Engine/Source/Runtime/Engine/Public/Materials/MaterialExpressionSingleLayerWaterMaterialOutput.h",
+        36
+       ]
+      },
+      {
+       "text": "\tvirtual FName GetInputName(int32 InputIndex) const override;"
+      },
+      {
+       "ref": [
+        "Engine/Source/Runtime/Engine/Public/Materials/MaterialExpressionSingleLayerWaterMaterialOutput.h",
+        39
+       ]
+      },
+      {
+       "ref": [
+        "Engine/Shaders/Private/BasePassPixelShader.usf",
+        9
+       ]
+      },
+      {
+       "ref": [
+        "Engine/Shaders/Private/LightData.ush",
+        23
+       ]
+      }
+     ]
+    }
+   ]
+  },
+  {
+   "path": "Engine/Source/Runtime/Engine/Public/Materials/MaterialExpressionResponsiveAA.h",
+   "create": true,
+   "edits": [
+    {
+     "line": 1,
+     "remove": [],
+     "add": [
+      {
+       "ref": [
+        "Engine/Shaders/Private/BasePassPixelShader.usf",
+        1
+       ]
+      },
+      {
+       "text": "// ITR2: class added to match the Into the Radius 2 (CM Games) schema."
+      },
+      {
+       "text": ""
+      },
+      {
+       "ref": [
+        "Engine/Shaders/Private/DeferredLightingCommon.ush",
+        7
+       ]
+      },
+      {
+       "text": ""
+      },
+      {
+       "ref": [
+        "Engine/Source/Runtime/Engine/Classes/Components/DirectionalLightComponent.h",
+        5
+       ]
+      },
+      {
+       "ref": [
+        "Engine/Source/Runtime/Engine/Classes/Components/DirectionalLightComponent.h",
+        6
+       ]
+      },
+      {
+       "ref": [
+        "Engine/Source/Runtime/Engine/Public/Materials/Material.h",
+        18
+       ]
+      },
+      {
+       "text": "#include \"Materials/MaterialExpressionSceneColor.h\""
+      },
+      {
+       "text": "#include \"MaterialExpressionResponsiveAA.generated.h\""
+      },
+      {
+       "text": ""
+      },
+      {
+       "ref": [
+        "Engine/Source/Runtime/Engine/Public/Materials/MaterialExpressionSingleLayerWaterMaterialOutput.h",
+        11
+       ]
+      },
+      {
+       "text": "class UMaterialExpressionResponsiveAA : public UMaterialExpression"
+      },
+      {
+       "ref": [
+        "Engine/Shaders/Private/BasePassPixelShader.usf",
+        229
+       ]
+      },
+      {
+       "ref": [
+        "Engine/Source/Runtime/Engine/Classes/Components/DirectionalLightComponent.h",
+        20
+       ]
+      },
+      {
+       "text": ""
+      },
+      {
+       "text": "\t// ITR2: property order matches the game schema (InputMode, Input, ConstInput)"
+      },
+      {
+       "text": "\tUPROPERTY(EditAnywhere, Category = MaterialExpressionResponsiveAA, meta = (ShowAsInputPin = \"Advanced\"))"
+      },
+      {
+       "text": "\tTEnumAsByte<enum EMaterialSceneAttributeInputMode::Type> InputMode;"
+      },
+      {
+       "text": ""
+      },
+      {
+       "text": "\tUPROPERTY(meta = (RequiredInput = \"false\", ToolTip = \"Defaults to 'ConstInput' if not specified\"))"
+      },
+      {
+       "text": "\tFExpressionInput Input;"
+      },
+      {
+       "text": ""
+      },
+      {
+       "text": "\tUPROPERTY(EditAnywhere, Category = MaterialExpressionResponsiveAA, meta = (OverridingInputProperty = \"Input\"))"
+      },
+      {
+       "text": "\tFVector2D ConstInput;"
+      },
+      {
+       "text": ""
+      },
+      {
+       "ref": [
+        "Engine/Source/Runtime/Engine/Classes/Components/DirectionalLightComponent.h",
+        348
+       ]
+      },
+      {
+       "ref": [
+        "Engine/Source/Runtime/Engine/Public/Materials/MaterialExpressionSingleLayerWaterMaterialOutput.h",
+        34
+       ]
+      },
+      {
+       "text": "\t// ITR2: stub Compile (passes Input / ConstInput through), the real CM behaviour is unknown"
+      },
+      {
+       "ref": [
+        "Engine/Source/Runtime/Engine/Public/Materials/MaterialExpressionSingleLayerWaterMaterialOutput.h",
+        35
+       ]
+      },
+      {
+       "ref": [
+        "Engine/Source/Runtime/Engine/Public/Materials/MaterialExpressionSingleLayerWaterMaterialOutput.h",
+        36
+       ]
+      },
+      {
+       "ref": [
+        "Engine/Source/Runtime/Engine/Public/Materials/MaterialExpressionSingleLayerWaterMaterialOutput.h",
+        39
+       ]
+      },
+      {
+       "ref": [
+        "Engine/Shaders/Private/BasePassPixelShader.usf",
+        9
+       ]
+      },
+      {
+       "ref": [
+        "Engine/Shaders/Private/LightData.ush",
+        23
+       ]
+      }
+     ]
+    }
+   ]
+  },
+  {
+   "path": "Engine/Source/Runtime/Engine/Public/Materials/MaterialExpressionSingleLayerWaterMaterialOutput.h",
+   "sha256": "f02743dc84b6c44fb5e490208caa4b32ea2c03d5d5ed54cb73da2f2f094b1a4e",
+   "edits": [
+    {
+     "line": 32,
+     "remove": [],
+     "add": [
+      {
+       "text": "\t// ITR2: matches game schema (not wired into Compile)"
+      },
+      {
+       "ref": [
+        "Engine/Source/Runtime/Engine/Classes/Components/DirectionalLightComponent.h",
+        51
+       ]
+      },
+      {
+       "text": "\tFExpressionInput ShadowIntensity;"
+      },
+      {
+       "text": ""
+      }
+     ]
+    }
+   ]
+  },
+  {
+   "path": "Engine/Source/Runtime/Engine/Public/Materials/MaterialExpressionSkyAtmosphereLuminance.h",
+   "create": true,
+   "edits": [
+    {
+     "line": 1,
+     "remove": [],
+     "add": [
+      {
+       "ref": [
+        "Engine/Shaders/Private/BasePassPixelShader.usf",
+        1
+       ]
+      },
+      {
+       "text": "// ITR2: classes added to match the Into the Radius 2 (CM Games) schema."
+      },
+      {
+       "text": ""
+      },
+      {
+       "ref": [
+        "Engine/Shaders/Private/DeferredLightingCommon.ush",
+        7
+       ]
+      },
+      {
+       "text": ""
+      },
+      {
+       "ref": [
+        "Engine/Source/Runtime/Engine/Classes/Components/DirectionalLightComponent.h",
+        5
+       ]
+      },
+      {
+       "ref": [
+        "Engine/Source/Runtime/Engine/Classes/Components/DirectionalLightComponent.h",
+        6
+       ]
+      },
+      {
+       "ref": [
+        "Engine/Source/Runtime/Engine/Public/Materials/Material.h",
+        18
+       ]
+      },
+      {
+       "text": "#include \"MaterialExpressionSkyAtmosphereLuminance.generated.h\""
+      },
+      {
+       "text": ""
+      },
+      {
+       "ref": [
+        "Engine/Source/Runtime/Engine/Public/Materials/MaterialExpressionSingleLayerWaterMaterialOutput.h",
+        11
+       ]
+      },
+      {
+       "text": "class UMaterialExpressionSkyAtmosphereLightIlluminanceVS : public UMaterialExpression"
+      },
+      {
+       "ref": [
+        "Engine/Shaders/Private/BasePassPixelShader.usf",
+        229
+       ]
+      },
+      {
+       "ref": [
+        "Engine/Source/Runtime/Engine/Classes/Components/DirectionalLightComponent.h",
+        20
+       ]
+      },
+      {
+       "text": ""
+      },
+      {
+       "text": "\tUPROPERTY(EditAnywhere, Category = MaterialExpressionSkyAtmosphereLightIlluminanceVS)"
+      },
+      {
+       "text": "\tint32 LightIndex;"
+      },
+      {
+       "text": ""
+      },
+      {
+       "ref": [
+        "Engine/Source/Runtime/Engine/Classes/Components/DirectionalLightComponent.h",
+        51
+       ]
+      },
+      {
+       "text": "\tFExpressionInput WorldPosition;"
+      },
+      {
+       "text": ""
+      },
+      {
+       "ref": [
+        "Engine/Source/Runtime/Engine/Classes/Components/DirectionalLightComponent.h",
+        348
+       ]
+      },
+      {
+       "text": "\t// ITR2: stub Compile (returns float3(0)), the real CM behaviour is unknown"
+      },
+      {
+       "ref": [
+        "Engine/Source/Runtime/Engine/Public/Materials/MaterialExpressionSingleLayerWaterMaterialOutput.h",
+        35
+       ]
+      },
+      {
+       "ref": [
+        "Engine/Source/Runtime/Engine/Public/Materials/MaterialExpressionSingleLayerWaterMaterialOutput.h",
+        36
+       ]
+      },
+      {
+       "ref": [
+        "Engine/Shaders/Private/BasePassPixelShader.usf",
+        9
+       ]
+      },
+      {
+       "ref": [
+        "Engine/Shaders/Private/LightData.ush",
+        23
+       ]
+      },
+      {
+       "text": ""
+      },
+      {
+       "ref": [
+        "Engine/Source/Runtime/Engine/Public/Materials/MaterialExpressionSingleLayerWaterMaterialOutput.h",
+        11
+       ]
+      },
+      {
+       "text": "class UMaterialExpressionSkyAtmosphereViewLuminanceVS : public UMaterialExpression"
+      },
+      {
+       "ref": [
+        "Engine/Shaders/Private/BasePassPixelShader.usf",
+        229
+       ]
+      },
+      {
+       "ref": [
+        "Engine/Source/Runtime/Engine/Classes/Components/DirectionalLightComponent.h",
+        20
+       ]
+      },
+      {
+       "text": ""
+      },
+      {
+       "ref": [
+        "Engine/Source/Runtime/Engine/Classes/Components/DirectionalLightComponent.h",
+        51
+       ]
+      },
+      {
+       "text": "\tFExpressionInput CameraViewVector;"
+      },
+      {
+       "text": ""
+      },
+      {
+       "ref": [
+        "Engine/Source/Runtime/Engine/Classes/Components/DirectionalLightComponent.h",
+        348
+       ]
+      },
+      {
+       "text": "\t// ITR2: stub Compile (returns float3(0)), the real CM behaviour is unknown"
+      },
+      {
+       "ref": [
+        "Engine/Source/Runtime/Engine/Public/Materials/MaterialExpressionSingleLayerWaterMaterialOutput.h",
+        35
+       ]
+      },
+      {
+       "ref": [
+        "Engine/Source/Runtime/Engine/Public/Materials/MaterialExpressionSingleLayerWaterMaterialOutput.h",
+        36
+       ]
+      },
+      {
+       "ref": [
+        "Engine/Shaders/Private/BasePassPixelShader.usf",
+        9
+       ]
+      },
+      {
+       "ref": [
+        "Engine/Shaders/Private/LightData.ush",
+        23
+       ]
+      },
+      {
+       "text": ""
+      },
+      {
+       "ref": [
+        "Engine/Source/Runtime/Engine/Public/Materials/MaterialExpressionSingleLayerWaterMaterialOutput.h",
+        11
+       ]
+      },
+      {
+       "text": "class UMaterialExpressionSkyAtmosphereViewLuminancePS : public UMaterialExpression"
+      },
+      {
+       "ref": [
+        "Engine/Shaders/Private/BasePassPixelShader.usf",
+        229
+       ]
+      },
+      {
+       "ref": [
+        "Engine/Source/Runtime/Engine/Classes/Components/DirectionalLightComponent.h",
+        20
+       ]
+      },
+      {
+       "text": ""
+      },
+      {
+       "text": "\t// ITR2: the spelling \"PackedDatfFromVS\" is as in the game schema"
+      },
+      {
+       "ref": [
+        "Engine/Source/Runtime/Engine/Classes/Components/DirectionalLightComponent.h",
+        51
+       ]
+      },
+      {
+       "text": "\tFExpressionInput PackedDatfFromVS;"
+      },
+      {
+       "text": ""
+      },
+      {
+       "ref": [
+        "Engine/Source/Runtime/Engine/Classes/Components/DirectionalLightComponent.h",
+        348
+       ]
+      },
+      {
+       "text": "\t// ITR2: stub Compile (returns float3(0)), the real CM behaviour is unknown"
+      },
+      {
+       "ref": [
+        "Engine/Source/Runtime/Engine/Public/Materials/MaterialExpressionSingleLayerWaterMaterialOutput.h",
+        35
+       ]
+      },
+      {
+       "ref": [
+        "Engine/Source/Runtime/Engine/Public/Materials/MaterialExpressionSingleLayerWaterMaterialOutput.h",
+        36
+       ]
+      },
+      {
+       "ref": [
+        "Engine/Shaders/Private/BasePassPixelShader.usf",
+        9
+       ]
+      },
+      {
+       "ref": [
+        "Engine/Shaders/Private/LightData.ush",
+        23
+       ]
+      }
+     ]
+    }
+   ]
+  },
+  {
+   "path": "Engine/Source/Runtime/Engine/Public/Materials/MaterialExpressionTextureSampleParameter.h",
+   "sha256": "be5cd72103c79ec605cdb50d5af12add0e6bf6b3b97030882f71ee75ace5127f",
+   "edits": [
+    {
+     "line": 39,
+     "remove": [],
+     "add": [
+      {
+       "text": "\t// ITR2: matches game schema"
+      },
+      {
+       "ref": [
+        "Engine/Source/Runtime/Engine/Public/Materials/MaterialExpressionTextureSampleParameter.h",
+        36
+       ]
+      },
+      {
+       "text": "\tuint8 bUseOnMobile:1;"
+      },
+      {
+       "text": ""
+      },
+      {
+       "text": "\t// ITR2: matches game schema"
+      },
+      {
+       "ref": [
+        "Engine/Source/Runtime/Engine/Public/Materials/MaterialExpressionTextureSampleParameter.h",
+        36
+       ]
+      },
+      {
+       "text": "\tuint8 bUseOnDesktop:1;"
+      },
+      {
+       "text": ""
+      }
+     ]
+    }
+   ]
+  },
+  {
+   "path": "Engine/Source/Runtime/Engine/Public/Materials/MaterialInstanceBasePropertyOverrides.h",
+   "sha256": "d8f675f0ff679f41bec977e72edbb7a1c34a7b104448ef8009391c6f792ed997",
+   "edits": [
+    {
+     "line": 56,
+     "remove": [],
+     "add": [
+      {
+       "text": "\t// ITR2: matches game schema"
+      },
+      {
+       "ref": [
+        "Engine/Source/Runtime/Engine/Public/Materials/Material.h",
+        535
+       ]
+      },
+      {
+       "text": "\tuint8 bOverride_bFullyRough : 1;"
+      },
+      {
+       "text": ""
+      },
+      {
+       "text": "\t// ITR2: matches game schema"
+      },
+      {
+       "ref": [
+        "Engine/Source/Runtime/Engine/Public/Materials/Material.h",
+        535
+       ]
+      },
+      {
+       "text": "\tuint8 bOverride_bFullyRoughOnMobile : 1;"
+      },
+      {
+       "text": ""
+      }
+     ]
+    },
+    {
+     "line": 102,
+     "remove": [],
+     "add": [
+      {
+       "text": "\t// ITR2: matches game schema"
+      },
+      {
+       "text": "\tUPROPERTY(EditAnywhere, Category = Material, meta = (editcondition = \"bOverride_bFullyRough\"))"
+      },
+      {
+       "ref": [
+        "Engine/Source/Runtime/Engine/Public/Materials/Material.h",
+        843
+       ]
+      },
+      {
+       "text": ""
+      },
+      {
+       "text": "\t// ITR2: matches game schema"
+      },
+      {
+       "text": "\tUPROPERTY(EditAnywhere, Category = Material, meta = (editcondition = \"bOverride_bFullyRoughOnMobile\"))"
+      },
+      {
+       "text": "\tuint8 bFullyRoughOnMobile : 1;"
+      },
+      {
+       "text": ""
+      }
+     ]
+    }
+   ]
+  },
+  {
+   "path": "Engine/Source/Runtime/Engine/Public/PrimitiveUniformShaderParameters.h",
+   "sha256": "d095d15257746d00dbdcc305b82037123903b7b500e823600e64288f2071218e",
+   "edits": [
+    {
+     "line": 72,
+     "remove": [],
+     "add": [
+      {
+       "text": "\tSHADER_PARAMETER_ARRAY(FVector4f, IndirectLightingCachePacked, [4]) // ITR2: CM Games addition (layout match; GPUScene slots 34..37)"
+      }
+     ]
+    }
+   ]
+  },
+  {
+   "path": "Engine/Source/Runtime/Engine/Public/PrimitiveUniformShaderParametersBuilder.h",
+   "sha256": "e3d15892c19aa1066b7700320d3ea6f119a03fe95350621438aea45bc8d266d5",
+   "edits": [
+    {
+     "line": 71,
+     "remove": [],
+     "add": [
+      {
+       "text": "\t\tFMemory::Memzero(Parameters.IndirectLightingCachePacked); // ITR2: CM Games member, unused by the editor"
+      }
+     ]
+    },
+    {
+     "line": 406,
+     "remove": [
+      "9bc1368908ff22812f8ec0d8c084a479a37643ed1d9bce7bf64b45a246dd6134"
+     ],
+     "add": [
+      {
+       "text": "\t\tParameters.SingleCaptureIndex = FMath::Max<int32>(Parameters.SingleCaptureIndex, -1) + 1; // ITR2: CM Games stores the index +1 (0 = none)"
+      }
+     ]
+    }
+   ]
+  },
+  {
+   "path": "Engine/Source/Runtime/Engine/Public/SceneTexturesConfig.h",
+   "sha256": "8dbcc4d018f9cb5069d21b09527443ba349844c2c857d97ce4dc6ea5a26ae5d0",
+   "edits": [
+    {
+     "line": 19,
+     "remove": [],
+     "add": [
+      {
+       "text": "\tSHADER_PARAMETER_RDG_TEXTURE_SRV(Texture2D<uint2>, SceneStencilTexture) // ITR2: CM Games addition (layout match)"
+      }
+     ]
+    }
+   ]
+  },
+  {
+   "path": "Engine/Source/Runtime/Engine/Public/SceneTypes.h",
+   "sha256": "c46e533ab97e9b5328ebcd82dcb264ea3985b3f7bffb086951c7e2b9ac4a4f12",
+   "edits": [
+    {
+     "line": 38,
+     "remove": [
+      "5a34e70c903a39da13c417fae86e4007a611100fea94972e35281aab8a091625"
+     ],
+     "add": [
+      {
+       "text": "\tstatic constexpr int32 NumCustomPrimitiveDataFloat4s = 5; // ITR2: was 9 (CM Games uses 5). Must match NUM_CUSTOM_PRIMITIVE_DATA in SceneData.ush"
+      }
+     ]
+    }
+   ]
+  },
+  {
+   "path": "Engine/Source/Runtime/Engine/Public/SceneView.h",
+   "sha256": "f8cadd5027d805353344a8fa14201f071155618beadc4935a023dd4bcc9f60ce",
+   "edits": [
+    {
+     "line": 822,
+     "remove": [],
+     "add": [
+      {
+       "text": "\t/* ITR2: CM Games View constants (layout match with the shipped game) */ \\"
+      },
+      {
+       "text": "\tVIEW_UNIFORM_BUFFER_MEMBER_PER_VIEW(FVector4f, SVPositionToTranslatedWorldPacked_0) \\"
+      },
+      {
+       "text": "\tVIEW_UNIFORM_BUFFER_MEMBER_PER_VIEW(FVector4f, SVPositionToTranslatedWorldPacked_1) \\"
+      },
+      {
+       "text": "\tVIEW_UNIFORM_BUFFER_MEMBER_PER_VIEW(FVector4f, SVPositionToTranslatedWorldPacked_2) \\"
+      },
+      {
+       "text": "\tVIEW_UNIFORM_BUFFER_MEMBER_PER_VIEW(FVector4f, SvPositionToResolvedScreenPosition) \\"
+      },
+      {
+       "text": "\tVIEW_UNIFORM_BUFFER_MEMBER_PER_VIEW(FVector4f, SvPositionToViewBufferUV) \\"
+      },
+      {
+       "text": "\tVIEW_UNIFORM_BUFFER_MEMBER_PER_VIEW(FVector4f, SvPositionToPixelQuality) \\"
+      },
+      {
+       "text": "\tVIEW_UNIFORM_BUFFER_MEMBER_PER_VIEW(FVector4f, CameraVectorConst) \\"
+      }
+     ]
+    },
+    {
+     "line": 830,
+     "remove": [],
+     "add": [
+      {
+       "text": "\t/* ITR2: */ VIEW_UNIFORM_BUFFER_MEMBER_PER_VIEW_EX(FVector4f, InvScreenPositionScaleBias, EShaderPrecisionModifier::Half) \\"
+      },
+      {
+       "text": "\t/* ITR2: */ VIEW_UNIFORM_BUFFER_MEMBER_PER_VIEW(FVector3f, RelativeWorldCameraOrigin) \\"
+      }
+     ]
+    },
+    {
+     "line": 906,
+     "remove": [],
+     "add": [
+      {
+       "text": "\t/* ITR2: */ VIEW_UNIFORM_BUFFER_MEMBER(FVector4f, DirectionalLightCombinedConst1) \\"
+      },
+      {
+       "text": "\t/* ITR2: */ VIEW_UNIFORM_BUFFER_MEMBER(FVector4f, DirectionalLightCombinedConst2) \\"
+      }
+     ]
+    },
+    {
+     "line": 924,
+     "remove": [],
+     "add": [
+      {
+       "text": "\t/* ITR2: */ VIEW_UNIFORM_BUFFER_MEMBER(FVector3f, PrecomputedIndirectLightingColorScaleFar) \\"
+      },
+      {
+       "text": "\t/* ITR2: */ VIEW_UNIFORM_BUFFER_MEMBER(FVector2f, PrecomputedIndirectLightingDistanceBlendConst) \\"
+      },
+      {
+       "text": "\t/* ITR2: */ VIEW_UNIFORM_BUFFER_MEMBER(FVector4f, PrecomputedIndirectLightingBrightnessThresholdConst) \\"
+      }
+     ]
+    },
+    {
+     "line": 931,
+     "remove": [],
+     "add": [
+      {
+       "text": "\t/* ITR2: */ VIEW_UNIFORM_BUFFER_MEMBER(FVector4f, SkyViewFromUnitToSubUvs) \\"
+      }
+     ]
+    },
+    {
+     "line": 1196,
+     "remove": [],
+     "add": [
+      {
+       "text": "\t// ITR2: CM Games environment mask (View only, not InstancedView). Layout match; bound to dummies by default."
+      },
+      {
+       "text": "\tSHADER_PARAMETER_TEXTURE(Texture2DArray, EnvironmentMaskSdfTexture)"
+      },
+      {
+       "text": "\tSHADER_PARAMETER_SAMPLER(SamplerState, EnvironmentMaskSdfSampler)"
+      },
+      {
+       "text": "\tSHADER_PARAMETER_SRV(StructuredBuffer<float4>, EnvironmentMaskData)"
+      },
+      {
+       "text": ""
+      }
+     ]
+    }
+   ]
+  },
+  {
+   "path": "Engine/Source/Runtime/Landscape/Classes/LandscapeProxy.h",
+   "sha256": "1f4c3aa5d17b4b323dfadcf683d0b43aabebbf79c39db42378457b7c8d97a348",
+   "edits": [
+    {
+     "line": 777,
+     "remove": [],
+     "add": [
+      {
+       "text": "\t// ITR2: matches game schema"
+      },
+      {
+       "ref": [
+        "Engine/Source/Runtime/Landscape/Classes/LandscapeProxy.h",
+        774
+       ]
+      },
+      {
+       "text": "\tfloat ShadowMapConstantDepthBias = 0.0f;"
+      },
+      {
+       "text": ""
+      }
+     ]
+    }
+   ]
+  },
+  {
+   "path": "Engine/Source/Runtime/Landscape/Private/LandscapeRender.cpp",
+   "sha256": "f7959162db8b4c19c8e226e5b216a7d1fee27b0f29030559e21d1f6ce0dae8e9",
+   "edits": [
+    {
+     "line": 2291,
+     "remove": [],
+     "add": [
+      {
+       "text": "\tLandscapeParams.ShadowMapConstantDepthBias = 0.0f; // ITR2: layout-match member"
+      }
+     ]
+    }
+   ]
+  },
+  {
+   "path": "Engine/Source/Runtime/Landscape/Public/LandscapeRender.h",
+   "sha256": "fe8064bff867521ce656feb12176f61a34d0638c418c2f5fc1fc96601f9e2ac5",
+   "edits": [
+    {
+     "line": 112,
+     "remove": [],
+     "add": [
+      {
+       "text": "\tSHADER_PARAMETER(float, ShadowMapConstantDepthBias) // ITR2: CM Games addition (layout match)"
+      }
+     ]
+    }
+   ]
+  },
+  {
+   "path": "Engine/Source/Runtime/Renderer/Private/BasePassRendering.cpp",
+   "sha256": "41c48acb66fc5453fd9414f4b4b1bc6e25983449b748cd1a3cf20294e5f8679a",
+   "edits": [
+    {
+     "line": 852,
+     "remove": [],
+     "add": [
+      {
+       "text": "\tSharedParameters.SkyOcclusionSkyVisibilityBias = 0.0f; // ITR2"
+      }
+     ]
+    }
+   ]
+  },
+  {
+   "path": "Engine/Source/Runtime/Renderer/Private/BasePassRendering.h",
+   "sha256": "7473f3773a8cad548f881694b04be97755deaea674c99fba041ec1ebb3040c06",
+   "edits": [
+    {
+     "line": 106,
+     "remove": [],
+     "add": [
+      {
+       "text": "\tSHADER_PARAMETER(float, SkyOcclusionSkyVisibilityBias) // ITR2: CM Games addition (layout match)"
+      }
+     ]
+    },
+    {
+     "line": 515,
+     "remove": [
+      "c44e4dfc18ecd3b5e2091136d0ed3858ea7bc988fdb4a83f4c7bb72cace6d9f6"
+     ],
+     "add": [
+      {
+       "text": "\t\tOutEnvironment.SetDefine(TEXT(\"USE_LIGHT_FUNCTION_ATLAS\"), (bSingleLayerWaterUsesLightFunctionAtlas || bTranslucentUsesLightFunctionAtlas || (!bTranslucent && IsForwardShadingEnabled(Parameters.Platform) /* ITR2: CM Games has LFA on opaque forward */)) ? TEXT(\"1\") : TEXT(\"0\"));"
+      }
+     ]
+    },
+    {
+     "line": 687,
+     "remove": [
+      "c44e4dfc18ecd3b5e2091136d0ed3858ea7bc988fdb4a83f4c7bb72cace6d9f6"
+     ],
+     "add": [
+      {
+       "text": "\t\tOutEnvironment.SetDefine(TEXT(\"USE_LIGHT_FUNCTION_ATLAS\"), (bSingleLayerWaterUsesLightFunctionAtlas || bTranslucentUsesLightFunctionAtlas || (!bTranslucent && IsForwardShadingEnabled(Parameters.Platform) /* ITR2: CM Games has LFA on opaque forward */)) ? TEXT(\"1\") : TEXT(\"0\"));"
+      }
+     ]
+    }
+   ]
+  },
+  {
+   "path": "Engine/Source/Runtime/Renderer/Private/LightFunctionAtlas.cpp",
+   "sha256": "2d615c6981ed6994da498b2f166d5c0b681b9a6f99b24a19e14ef36179fa48f6",
+   "edits": [
+    {
+     "line": 647,
+     "remove": [
+      "a1f7c348ce100841265f866227fcdf2300324b727538eb90c0e9437105b0d0e5"
+     ],
+     "add": [
+      {
+       "text": "\t\t\t// ITR2: stride 9 layout, same matrix for both eyes"
+      },
+      {
+       "text": "\t\t\tLightInfoDataBufferPtr[OutputBufferLightIndex].Transform[0] = TranslatedWorldToLight;"
+      },
+      {
+       "text": "\t\t\tLightInfoDataBufferPtr[OutputBufferLightIndex].Transform[1] = TranslatedWorldToLight;"
+      }
+     ]
+    }
+   ]
+  },
+  {
+   "path": "Engine/Source/Runtime/Renderer/Private/LightFunctionAtlas.h",
+   "sha256": "f69c3465e2261758ecd12fa998035fb1d2b9d961be4e33f20b5a65448ab3778e",
+   "edits": [
+    {
+     "line": 123,
+     "remove": [
+      "02a896d57af83043c5609780efdcee80614fb4149d6a8de1b423736ae4714de2"
+     ],
+     "add": [
+      {
+       "text": "\tFMatrix44f Transform[2]; // ITR2: CM layout, 9 float4 per light (params + 2 eyes x 4 rows); both eyes get the same matrix"
+      }
+     ]
+    }
+   ]
+  },
+  {
+   "path": "Engine/Source/Runtime/Renderer/Private/LightGridInjection.cpp",
+   "sha256": "41fd562f667373ad4e4661a90a4fd108d8e6f14588607bdbe8fdfbd1afbf4704",
+   "edits": [
+    {
+     "line": 179,
+     "remove": [],
+     "add": [
+      {
+       "text": "\tForwardLightData.GlobalLightAttenuationConst = FVector4f(0, 0, 0, 1); // ITR2:"
+      }
+     ]
+    },
+    {
+     "line": 436,
+     "remove": [
+      "3080656e77e2b5b76858a25d24b62454d56f378af08e28f186d4b13421c2eeab"
+     ],
+     "add": [
+      {
+       "text": "\tSimpleLightLightingChannels.bChannel0 = SimpleLightLightingChannels.bChannel1 = true; // ITR2: no bChannel2"
+      }
+     ]
+    },
+    {
+     "line": 475,
+     "remove": [
+      "71eda64a8c1d0b159d9e909165c124744cb338978e889622a8d4401ced3a3d1c"
+     ],
+     "add": [
+      {
+       "text": "\tOut.SpotAnglesAndSourceRadiusPacked\t\t\t\t\t\t= FVector4f(FMath::AsFloat(uint32(FFloat16(-2.0f).Encoded) | (uint32(FFloat16(-65504.0f).Encoded) << 16)) /* ITR2: f16(cosOuter)|f16(cutoff)<<16 */, 1, FMath::AsFloat(PackedZ), FMath::AsFloat(PackedW));"
+      }
+     ]
+    },
+    {
+     "line": 522,
+     "remove": [
+      "2d323956f2d0c523b7a142431366f8928ddfd0238e01ff34b0d9877f753ac8b7"
+     ],
+     "add": [
+      {
+       "text": "\tOut.SpotAnglesAndSourceRadiusPacked\t\t\t\t\t\t= FVector4f(FMath::AsFloat(uint32(FFloat16(LightParameters.SpotAngles.X).Encoded) | (uint32(FFloat16(-65504.0f).Encoded) << 16)) /* ITR2: f16(cosOuter)|f16(cutoff)<<16, CM cutoff unknown */, LightParameters.SpotAngles.Y, FMath::AsFloat(PackedZ), FMath::AsFloat(PackedW));"
+      }
+     ]
+    },
+    {
+     "line": 886,
+     "remove": [
+      "fc6c6608beb9201395ec813d1985d984feb939d56f6c00a77b6c6fe19037d278"
+     ],
+     "add": [
+      {
+       "text": "\t\t\t\tSimpleLightLightingChannels.bChannel0 = SimpleLightLightingChannels.bChannel1 = true; // ITR2: no bChannel2"
+      }
+     ]
+    },
+    {
+     "line": 1205,
+     "remove": [],
+     "add": [
+      {
+       "text": "\t\tForwardLightData->GlobalLightAttenuationConst = FVector4f(0, 0, 0, 1); // ITR2: A = 1 (stock behaviour; CM shader multiplies the sun by A)"
+      }
+     ]
+    }
+   ]
+  },
+  {
+   "path": "Engine/Source/Runtime/Renderer/Private/SceneRendering.cpp",
+   "sha256": "5614ade4772e94f50aac41c5b065c5da0aa8daacce1de38f3b148a7bbcc685d1",
+   "edits": [
+    {
+     "line": 1912,
+     "remove": [],
+     "add": [
+      {
+       "text": "\t// ITR2: neutral values for the CM threshold curve (editor parity with stock); Th.x huge => no excess, Near=Far=ColorScale"
+      },
+      {
+       "text": "\tViewUniformShaderParameters.PrecomputedIndirectLightingBrightnessThresholdConst = FVector4f(3.4e38f, 0, 0, 0);"
+      },
+      {
+       "text": "\tViewUniformShaderParameters.PrecomputedIndirectLightingDistanceBlendConst = FVector2f(0, 0);"
+      },
+      {
+       "text": ""
+      }
+     ]
+    },
+    {
+     "line": 1918,
+     "remove": [],
+     "add": [
+      {
+       "text": "\tViewUniformShaderParameters.PrecomputedIndirectLightingColorScaleFar = ViewUniformShaderParameters.PrecomputedIndirectLightingColorScale; // ITR2:"
+      }
+     ]
+    }
+   ]
+  },
+  {
+   "path": "Engine/Source/Runtime/Renderer/Private/SceneRendering.h",
+   "sha256": "2254612366a53743b694e24f7c9ac13f209c51db9d06a3b8efd10d37d37454f8",
+   "edits": [
+    {
+     "line": 682,
+     "remove": [],
+     "add": [
+      {
+       "text": "\tSHADER_PARAMETER(FVector4f, GlobalLightAttenuationConst) // ITR2: CM Games addition (layout match)"
+      }
+     ]
+    },
+    {
+     "line": 690,
+     "remove": [],
+     "add": [
+      {
+       "text": "\tSHADER_PARAMETER(FVector3f, EyeOffset) // ITR2: CM Games addition (layout match)"
+      }
+     ]
+    }
+   ]
+  },
+  {
+   "path": "Engine/Source/Runtime/Renderer/Private/SceneTextures.cpp",
+   "sha256": "091249f0635bef28fd003733550fab0bd5645a4151ab02826c97e174df0391b3",
+   "edits": [
+    {
+     "line": 1130,
+     "remove": [],
+     "add": [
+      {
+       "text": "\tSceneTextureParameters.SceneStencilTexture = SystemTextures.StencilDummySRV; // ITR2: layout-match member, dummy is enough"
+      }
+     ]
+    }
+   ]
+  },
+  {
+   "path": "Engine/Source/Runtime/Renderer/Private/TranslucentRendering.cpp",
+   "sha256": "c1d0c623b32e63556078fc6b88594572d77c0b90584ceb8e6d87fc4c75576b8a",
+   "edits": [
+    {
+     "line": 1149,
+     "remove": [],
+     "add": [
+      {
+       "text": "\tBasePassParameters.Shared.SkyOcclusionSkyVisibilityBias = 0.0f; // ITR2"
+      }
+     ]
+    }
+   ]
+  }
+ ]
+}
