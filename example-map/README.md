@@ -15,13 +15,21 @@ There are two ways to build it, and the same generator makes both:
 The long explanation for both is in [`../map-making/guide.md`](../map-making/guide.md).
 
 ## Just want to try it?
-[`prebuilt/`](prebuilt/) has the fork build of this map:
+[`prebuilt/`](prebuilt/) has the fog test build of this map: the three custom materials, strong blue fog with a
+sky atmosphere, and the four pillar pairs (ours on the left, the game's material on the right) at 10, 25, 50 and
+100 m straight ahead of the start.
 
 | File | Bytes | SHA-256 |
 |---|---|---|
-| `pakchunk100-ITR2Map_Test_P.utoc` | 1,549 | `d6459b7c51cdd0d343616f9e357a6be0a41d3d2cb69f468887e1d2b6ce8a9bf8` |
-| `pakchunk100-ITR2Map_Test_P.ucas` | 324,944 | `c9a9c31fb98d1102e35e715121c684f2075cdc713ace60c492b9bc606d2cc9bc` |
+| `pakchunk100-ITR2Map_Test_P.utoc` | 1,541 | `9e0ba61692405bebb34766fd3d4f71ff2ba5c7cebf6e5f9b0189de7f7f32a8dd` |
+| `pakchunk100-ITR2Map_Test_P.ucas` | 352,064 | `0dfd19aeab8ccd8caf80671b8ced462b745049f97c52c3b2d33cdf6f51d19401` |
 | `pakchunk100-ITR2Map_Test_P.pak` | 339 | `ae7f446b81a9cbe8f7bb9fcbb93a58ef43fbd8e7f27c306b8d3e8ff3b9ccfeca` |
+
+One honest caveat: this one isn't straight out of a cook. It's an uncompressed fork cook from before the five audit
+fixes went into the shader source, with the fixed vertex and pixel shaders (compiled from the cook's own shader dumps
+with the fixes applied) swapped into its shader library afterwards, for SM5 and SM6. That's how we tested the fixes
+without waiting on a full shader recompile. A normal cook with the current [`../engine/`](../engine/) patch should
+give you the same shaders; that's being checked.
 
 These are the exact files we tested in VR. Don't rename them: the game only loads the shaders in a mod container
 named `pakchunk<N>-<something>_P`. The steps for UE4SS, the loader and the map are at the top of
@@ -82,9 +90,9 @@ to the loader's `config.lua`.
 ## What we tested (2026-10-12)
 - Fork route: cooked with the patched fork, packaged with stock 5.5.4 (CL 40574608), in VR: the map loads from the
   Hub, the floor is a grey checker, the inner walls red and the pad green, and the pad takes you back to the Hub.
-  Those are the `prebuilt/` files. Retested in VR after the lighting port went into the fork (2026-10-12, 22:15): no strobing, and the lit walls and floor look like the game's own materials under the torch and in shade. Only these simple materials were tested, no textures, translucent or masked ones.
+  Those were the earlier `prebuilt/` files. Retested in VR after the lighting port went into the fork (2026-10-12, 22:15): no strobing, and the lit walls and floor look like the game's own materials under the torch and in shade. Only these simple materials were tested, no textures, translucent or masked ones.
 - Fog and shader audit (fork route): the generator now adds a mild ExponentialHeightFog and a SkyAtmosphere (the
-  `prebuilt/` map was made before that). With `ITR2_FOG_PILLARS=1` (set it in your shell before the build script,
+  current `prebuilt/` map is this fog test build). With `ITR2_FOG_PILLARS=1` (set it in your shell before the build script,
   and it needs the custom materials) it also makes strong fog and four pairs of pillars at 10, 25, 50 and 100 m, left
   our red material, right the game's `BasicShapeMaterial`. In VR (DX11 and DX12) the pairs fade
   identically with the audit fixes in [`../engine/`](../engine/). Not checked: the volumetric lightmap clamp (this

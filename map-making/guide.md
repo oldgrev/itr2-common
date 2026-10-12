@@ -194,8 +194,9 @@ somewhere else, look for the `.ushaderbytecode` under `legacy`.)
 
 ### Tested
 On 2026-10-12, in VR: the fork-cooked example with its three materials loaded from the Hub, the floor showed the grey
-checker, the inner walls were red, the return pad glowed green, and the pad took us back to the Hub. The files are in
-[`example-map/prebuilt/`](../example-map/prebuilt/).
+checker, the inner walls were red, the return pad glowed green, and the pad took us back to the Hub. The current files in
+[`example-map/prebuilt/`](../example-map/prebuilt/) are the later fog test build of the same map (strong fog and
+the pillar pairs; see its README).
 
 ### Lit materials
 CM Games changed the lighting shader code, and an unpatched fork has Meta's. The layouts match (that's §8), but the
