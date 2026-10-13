@@ -4,8 +4,11 @@
   with the fork (unversioned, compressed), fixes the cook's ChunkManifest paths, then stages, paks and builds the
   IoStore container with the STOCK UE 5.5.4 UAT (-skipcook), and names it pakchunk<N>-<name>_P. With -Install it copies
   it into the game's Content\Paks\~mods. See map-making/guide.md, sections 4 and 5.
+  -FogPillars and -Coverage add the fog pillar pairs and the coverage strip to the map (see the header of Scripts\build_itr2_testmap.py).
+  -BuildLighting bakes lighting between generating and cooking; it needs UnrealLightmass built in the fork.
 .EXAMPLE
   .\build-itr2-map-fork.ps1 -ForkEngine "C:\ue55"                      # generate + cook + package, output in .\build\mod
+  .\build-itr2-map-fork.ps1 -FogPillars -Coverage -BuildLighting      # what the prebuilt map is, apart from its manual WPO step
   .\build-itr2-map-fork.ps1 -SkipGenerate -SkipCook -Install -Game "D:\SteamLibrary\steamapps\common\IntoTheRadius2"
 #>
 param(
@@ -18,7 +21,13 @@ param(
     [string]$Name = "pakchunk100-ITR2Map_Test_P",   # must be pakchunk<Chunk>-<anything>_P, or the game won't load its shaders
     [switch]$SkipGenerate,             # keep the map you already have (or made by hand)
     [switch]$SkipCook,                 # repackage the last cook
+    [switch]$GenerateOnly,             # stop after generating, e.g. to add the WPO cubes by hand before baking and cooking
     [switch]$Install,
+    [switch]$FogPillars,               # ITR2_FOG_PILLARS=1: strong fog and the four pillar pairs
+    [switch]$Coverage,                 # ITR2_COVERAGE=1: L-blocks, masked screen, instanced cubes, lightmapped booth, glass panes
+    [switch]$BuildLighting,            # bake lighting after generating (Lightmass through the fork editor); writes L_ITR2Test_BuiltData
+    [string]$LightingQuality = "Medium",   # Preview | Medium | High | Production
+    [string]$PCoreMask = "0",          # CPU affinity mask to pin the editor, cook and shader workers to; 0 = don't pin (see below)
     [string]$Game = "C:\Program Files (x86)\Steam\steamapps\common\IntoTheRadius2"
 )
 $ErrorActionPreference = "Stop"
@@ -26,23 +35,68 @@ $Here = $PSScriptRoot
 if ($Name -notmatch "^pakchunk$Chunk-.+_P$") { throw "-Name must look like pakchunk$Chunk-<something>_P (the game finds a mod's shader library by that chunk number)" }
 New-Item -ItemType Directory -Force $Out | Out-Null
 $ProjDir = Split-Path $Project
+$Mask = [int64]$PCoreMask   # accepts 65535 or "0xFFFF"
+
+# UE resets its own affinity and priority after startup, and starts its ShaderCompileWorkers at its own priority, so setting
+# them once at launch doesn't stick. If -PCoreMask is non-zero, this background job pins the UE processes to that mask at
+# Normal priority every 20 s while the script runs. I tuned it for an i7-13700K, where logical processors 0-15 are the
+# P-cores, so the mask there is 0xFFFF and the E-cores stay free. Other CPUs need their own mask.
+$PinJob = $null
+if ($Mask -ne 0) {
+    $PinJob = Start-Job -ArgumentList $Mask -ScriptBlock {
+        param($m)
+        while ($true) {
+            Get-Process UnrealEditor, UnrealEditor-Cmd, ShaderCompileWorker, UnrealLightmass -ErrorAction SilentlyContinue | ForEach-Object {
+                try { if ([int64]$_.ProcessorAffinity -ne $m) { $_.ProcessorAffinity = [IntPtr]$m } } catch {}
+                try { if ($_.PriorityClass -ne 'Normal') { $_.PriorityClass = 'Normal' } } catch {}
+            }
+            Start-Sleep 20
+        }
+    }
+    $job = $PinJob
+    Register-EngineEvent PowerShell.Exiting -Action { Stop-Job $job -ErrorAction SilentlyContinue } | Out-Null
+}
+
+# Runs a process and returns its exit code. Reading .Handle matters: without it ExitCode comes back empty after
+# WaitForExit (a PowerShell quirk with Start-Process -PassThru), and every failure looks like success.
+function Invoke-Pinned($Exe, [string[]]$ArgList) {
+    $p = Start-Process -FilePath $Exe -ArgumentList $ArgList -PassThru -NoNewWindow
+    $null = $p.Handle
+    if ($Mask -ne 0) { try { $p.ProcessorAffinity = [IntPtr]$Mask } catch {} }   # children (shader workers) inherit it
+    $p.WaitForExit()
+    return $p.ExitCode
+}
 
 if (-not $SkipGenerate) {
     # The full editor with no rendering: the -run=pythonscript commandlet crashes in new_level/new_blank_map on 5.5.
     $env:ITR2_CUSTOM_MATERIALS = "1"
+    if ($FogPillars) { $env:ITR2_FOG_PILLARS = "1" }
+    if ($Coverage) { $env:ITR2_COVERAGE = "1" }
     try {
-        & "$ForkEngine\Engine\Binaries\Win64\UnrealEditor.exe" $Project "-ExecutePythonScript=$Here\Scripts\build_itr2_testmap.py" `
-            -nullrhi -unattended -nosplash -nosound "-abslog=$Out\generate.log" | Out-Null
-    } finally { Remove-Item Env:ITR2_CUSTOM_MATERIALS -ErrorAction SilentlyContinue }
-    if (-not (Select-String -Path "$Out\generate.log" -Pattern "ITR2 test map built" -Quiet)) { throw "Map generation failed; see $Out\generate.log" }
+        $rc = Invoke-Pinned "$ForkEngine\Engine\Binaries\Win64\UnrealEditor.exe" @("`"$Project`"", "`"-ExecutePythonScript=$Here\Scripts\build_itr2_testmap.py`"",
+            "-nullrhi", "-unattended", "-nosplash", "-nosound", "`"-abslog=$Out\generate.log`"")
+    } finally { Remove-Item Env:ITR2_CUSTOM_MATERIALS, Env:ITR2_FOG_PILLARS, Env:ITR2_COVERAGE -ErrorAction SilentlyContinue }
+    if (-not (Select-String -Path "$Out\generate.log" -Pattern "ITR2 test map built" -Quiet)) { throw "Map generation failed ($rc); see $Out\generate.log" }
+}
+if ($GenerateOnly) { if ($PinJob) { Stop-Job $PinJob -ErrorAction SilentlyContinue; Remove-Job $PinJob -Force -ErrorAction SilentlyContinue }; return }
+
+if ($BuildLighting) {
+    # Needs UnrealLightmass built in the fork (Engine\Binaries\Win64\UnrealLightmass.exe).
+    $sw = [Diagnostics.Stopwatch]::StartNew()
+    $rc = Invoke-Pinned "$ForkEngine\Engine\Binaries\Win64\UnrealEditor-Cmd.exe" @("`"$Project`"", "-run=resavepackages", "-buildlighting", "-allowcommandletrendering",
+        "-MapsOnly", "`"-map=$Map`"", "-quality=$LightingQuality", "-unattended", "-nosplash", "-nosound", "-stdout", "-utf8output", "`"-abslog=$Out\lighting.log`"")
+    Write-Host ("Lighting build finished in {0:n1} min (exit {1})" -f $sw.Elapsed.TotalMinutes, $rc)
+    if ($rc -ne 0) { throw "Lighting build failed ($rc); see $Out\lighting.log" }
 }
 
 if (-not $SkipCook) {
     # Cook with the fork, so the packages and shaders match the game. Unversioned and compressed, like the game's own.
     # The first cook compiles the engine's global shaders for SM5 and SM6 and takes a long time.
-    & "$ForkEngine\Engine\Binaries\Win64\UnrealEditor-Cmd.exe" $Project -run=Cook -TargetPlatform=Windows "-Map=$Map" `
-        -unversioned -iostore -compressed -manifests -unattended -nosplash -nosound -utf8output "-abslog=$Out\cook.log" | Out-Null
-    if ($LASTEXITCODE -ne 0) { throw "Fork cook failed ($LASTEXITCODE); see $Out\cook.log" }
+    $sw = [Diagnostics.Stopwatch]::StartNew()
+    $rc = Invoke-Pinned "$ForkEngine\Engine\Binaries\Win64\UnrealEditor-Cmd.exe" @("`"$Project`"", "-run=Cook", "-TargetPlatform=Windows", "`"-Map=$Map`"",
+        "-unversioned", "-iostore", "-compressed", "-manifests", "-unattended", "-nosplash", "-nosound", "-utf8output", "`"-abslog=$Out\cook.log`"")
+    Write-Host ("Cook finished in {0:n1} min (exit {1})" -f $sw.Elapsed.TotalMinutes, $rc)
+    if ($rc -ne 0) { throw "Fork cook failed ($rc); see $Out\cook.log" }
 }
 
 # The cook writes the ChunkManifest paths relative to the engine folder that ran it, and the stock UAT reads them
@@ -70,10 +124,10 @@ Get-ChildItem "$Cooked\*\Metadata\ChunkManifest\pakchunk*.txt" | ForEach-Object 
 # Stage + pak + IoStore with the stock UAT on the fork's cooked output. A source-built editor has no UnrealGame
 # Shipping receipt, so its own UAT won't stage a Shipping build of a blueprint-only project.
 if (Test-Path "$Out\stage") { Remove-Item "$Out\stage" -Recurse -Force }
-& "$StockEngine\Engine\Build\BatchFiles\RunUAT.bat" BuildCookRun "-project=$Project" -platform=Win64 -clientconfig=Shipping `
-    -skipcook -skipbuild -nocompile -nocompileuat -stage -pak -iostore -compressed -unversioned -manifests -utf8output `
-    -nodebuginfo -skipcompilingdll "-stagingdirectory=$Out\stage" "-abslog=$Out\uat.log" -unattended
-if ($LASTEXITCODE -ne 0) { throw "Stage/pak failed ($LASTEXITCODE); see $Out\uat.log" }
+$rc = Invoke-Pinned "$StockEngine\Engine\Build\BatchFiles\RunUAT.bat" @("BuildCookRun", "-project=`"$Project`"", "-platform=Win64", "-clientconfig=Shipping",
+    "-skipcook", "-skipbuild", "-nocompile", "-nocompileuat", "-stage", "-pak", "-iostore", "-compressed", "-unversioned", "-manifests", "-utf8output",
+    "-nodebuginfo", "-skipcompilingdll", "-stagingdirectory=`"$Out\stage`"", "-abslog=`"$Out\uat.log`"", "-unattended")
+if ($rc -ne 0) { throw "Stage/pak failed ($rc); see $Out\uat.log" }
 
 $Paks = Get-ChildItem "$Out\stage" -Recurse -Filter "pakchunk$Chunk-*" | Where-Object { $_.Extension -in ".utoc", ".ucas", ".pak" }
 if (-not $Paks) { throw "No pakchunk$Chunk-* in the staged output; check the PrimaryAssetLabel's chunk" }
@@ -90,3 +144,4 @@ if ($Install) {
     foreach ($e in ".utoc", ".ucas", ".pak") { Copy-Item (Join-Path "$Out\mod" "$Name$e") $Dst -Force }
     Write-Host "Installed into $Dst"
 }
+if ($PinJob) { Stop-Job $PinJob -ErrorAction SilentlyContinue; Remove-Job $PinJob -Force -ErrorAction SilentlyContinue }

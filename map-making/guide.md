@@ -13,10 +13,10 @@ has tried it as far as we know.
 
 I don't love this *we* phrasing but anywhere *we* is used, it's illustrating that some times in the assembly of this puzzle, I have no idea what command i need to run next or how exactly it's cooking a thing this time around. I know how I'd do it normally but things get to be in flux so much that I'm not closely following the latest cook commands and which folder or if it's decided to do it in a different subfolder setc. That said, these documents are to distil and reveal the puzzle for others and if they don't, Lucy will have some splainin to do.s
 
-## 0. Where things are at (2026-10-12)
+## 0. Where things are at (2026-10-13)
 | You want | Status |
 |---|---|
-| A map with your own materials | Works with the patched fork (§4, §5), lit ones too. Tested in VR with simple materials only (§5). Compiled shaders audited against the game's, fog proven in VR, baked-lighting clamp not (§5) |
+| A map with your own materials | Works with the patched fork (§4, §5), lit ones too. Tested in VR: simple materials, plus a coverage build with a custom mesh, baked lighting, masked, ISM, WPO and lit translucent (§5). Landscape, skeletal meshes and decals not tried. Compiled shaders audited against the game's, fog proven in VR, baked-lighting clamp not (§5) |
 | A map from engine meshes and engine materials only | Works with either route. The stock route (§6) is quicker to set up |
 | Material instances | Untested on the fork. On stock 5.5.4, don't: one crashed the game |
 | The game's own materials and meshes in your map | Unexplored. Probably fine, if you can get copies at the right paths |
@@ -62,6 +62,10 @@ The easiest way to start is the example's generator,
 reading alongside this. You can run it from the editor (File, Execute Python Script) or let the build scripts run it
 headless. With `ITR2_CUSTOM_MATERIALS=1` in the environment (the fork build script sets it) it also makes three
 materials: a red DefaultLit, a checker DefaultLit and a green Unlit glow, all plain engine expressions.
+`ITR2_FOG_PILLARS=1` adds the strong fog and the pillar pairs, and `ITR2_COVERAGE=1` adds a strip of things that use
+other shader permutations: an imported OBJ static mesh, a lightmapped booth, a masked material, instanced cubes and two
+lit translucent panes. The build script sets them from `-FogPillars` and `-Coverage`; the generator's header lists
+what each one adds.
 
 On 5.5, the `-run=pythonscript` commandlet that ITR1's example used crashes as soon as the script makes a level. So
 the build scripts start the full editor with `-nullrhi -ExecutePythonScript=`, which works.
@@ -75,8 +79,8 @@ A few rules we worked out:
   makes (chunk 0, about 180 MB of engine content) stays behind; the game has its own copies.
 - **Materials.** Engine materials work on both routes. Your own materials need the fork. Material instances are
   untested on the fork and crash on stock.
-- **Lights.** Movable lights work. The example has a directional light at intensity 3 and a sky light at 1. We
-  haven't tried a lighting build.
+- **Lights.** Movable lights work. The example has a directional light at intensity 3 and a sky light at 1. Baked
+  lighting works too (§5), with the material usage flags set.
 - **Start and exit.** Put a `PlayerStart` where people should arrive, and something visible for the return pad. The
   loader works from coordinates in its config, so note both down (§7). Put the pad somewhere you won't walk onto by
   accident.
@@ -193,10 +197,38 @@ python <itr2-common>\tools\xform_check.py legacy\IntoTheRadius2\Content\ShaderAr
 somewhere else, look for the `.ushaderbytecode` under `legacy`.)
 
 ### Tested
+On 2026-10-13, in VR, a coverage build with baked lighting (Preview quality) rendered: our own static mesh asset
+(it loads and collides), lightmapped meshes, masked (cutout and shadows), ISM, WPO reading custom primitive data, and
+lit translucent in both lighting modes. Not tested: landscape, skeletal meshes, decals.
+
+You can build the same map with `build-itr2-map-fork.ps1 -FogPillars -Coverage -BuildLighting`, once UnrealLightmass is
+built in the fork (below). WPO is the one thing the generator can't do: Python can't wire World Position Offset, so
+it needs a manual step in the editor. Make a material whose scalar parameters have **Use Custom Primitive Data** on and
+feed them into World Position Offset, then set the values per component with `SetDefaultCustomPrimitiveDataFloat` or in
+the component's Custom Primitive Data Defaults. `SetCustomPrimitiveDataFloat` only sets the runtime value, so it isn't
+saved or cooked and the cubes stand still. The steps, in the order that works with the build script, are in
+[`example-map/README.md`](../example-map/README.md#world-position-offset). Mine used a Remote Control step to do it,
+which isn't in this repo.
+
 On 2026-10-12, in VR: the fork-cooked example with its three materials loaded from the Hub, the floor showed the grey
 checker, the inner walls were red, the return pad glowed green, and the pad took us back to the Hub. The current files in
-[`example-map/prebuilt/`](../example-map/prebuilt/) are the later fog test build of the same map (strong fog and
-the pillar pairs; see its README).
+[`example-map/prebuilt/`](../example-map/prebuilt/) are the later build of the same map, with the strong fog, the pillar
+pairs and the coverage strip (see its README).
+
+### Grey grid after building lighting: tick the material usage flags
+If your materials turn into the grey and white grid (WorldGridMaterial) once lighting is built, set the usage flags on
+each material. **Used with Static Lighting** for anything on lightmapped static meshes, **Used with Instanced Static
+Meshes** for ISM/HISM, and the others that apply (skeletal meshes and so on). UE only cooks those shader permutations
+when the flag is set, so without it the game finds nothing for that mesh type and falls back to the grid. That's how the
+whole map went grey in my first coverage build. In the editor it's in the material's Details, Usage; from Python it's
+`used_with_static_lighting` and `used_with_instanced_static_meshes` before recompiling, see `recompile_with_usage` in
+the example generator. The open oddity: the unlit material also fell back in that build, although unlit shouldn't need
+lightmap shaders and its shaders were byte-identical to the working build. I don't know why.
+
+Building lighting in the fork editor also needs UnrealLightmass built first:
+`Engine\Build\BatchFiles\Build.bat UnrealLightmass Win64 Development`. And don't enable non-default runtime plugins
+(RemoteControl, say) in the `.uproject`: stock UAT then wants a game target and staging fails. Pass them on the editor
+command line instead.
 
 ### Lit materials
 CM Games changed the lighting shader code, and an unpatched fork has Meta's. The layouts match (that's §8), but the
@@ -209,8 +241,7 @@ terms in the base pass, the directional light attenuation, the spot cone cutoff 
 also needed the light-function atlas set up the way the game has it (stride 9, per-eye matrices; with our first try
 of stride 5 the lit materials strobed under the torch), plus fill values for the new constants so the editor viewport
 still lights things. Tested in VR on 2026-10-12: no strobing, and the torch and shade look like the game's own
-materials. That was only the example's simple materials. Textures, translucent and masked materials haven't been tried,
-so expect surprises there. The fill and ambient terms were worked out from the game's compiled shaders, so they're a
+materials. The coverage build later added masked and lit translucent ones (also fine in VR); textures haven't been tried. The fill and ambient terms were worked out from the game's compiled shaders, so they're a
 close match, not CM's source.
 
 **Audit.** Afterwards I compared all 19 compiled shaders of the example (SM5 and SM6) with the game's equivalents:
@@ -227,10 +258,12 @@ also checked in VR with pillar pairs, one with our red material and one with the
 10 to 100 m in strong fog: they fade identically, in DX11 and DX12. The example generator can make that scene
 (`ITR2_FOG_PILLARS=1`, see the example's README).
 
-Not checked in game: the volumetric lightmap clamp (it needs baked lighting, which the example never has), and where
+Not checked on its own: the volumetric lightmap clamp (baked lighting renders in VR now, but I haven't compared that
+fix), and where
 the light function atlas gets its eye index from (we read `StereoPassIndex`, the game takes it from an interpolant;
 that's the same only if the game fills it with the eye index, which I couldn't check from the shaders). The audit only
-covered the example's materials, so textured, masked, translucent and lightmapped ones are still unaudited.
+covered the example's materials, so textured, masked, translucent and lightmapped ones are still unaudited, even though
+they render in VR.
 
 ## 6. The quick kludge: stock 5.5.4
 For a map that only uses engine meshes and engine materials, you can skip building the fork. This is how we got the
@@ -331,6 +364,12 @@ ships with it, which helps a lot), its `.usmap` and its config with the engine. 
      38; the per-object stride stays 43), plus one or two members in `ForwardLightData`, `SceneTextures`, `BasePass`
      and the landscape buffer.
 
+     So in ITR2 a material only gets 20 custom primitive data floats (indices 0-19), not stock UE's 36. And if you
+     set custom data on a placed mesh from a script, use `SetDefaultCustomPrimitiveDataFloat`:
+     `SetCustomPrimitiveDataFloat` only changes the runtime value, it isn't saved, and your cooked map ends up with
+     zeros. We lost a test to that; the slot-38 layout itself is checked in VR with a WPO material reading three
+     custom data values.
+
    A shader compiled against the wrong layout reads the wrong memory.
 4. **Instance transforms.** The `DataDrivenPlatformInfo.ini` setting from §4. Same effect: the shader reads the
    right memory in the wrong format.
@@ -343,13 +382,14 @@ for those. Your own materials do, which is why they need the fork.
 |---|---|
 | Geometry and collision from engine meshes | Works, both routes |
 | Engine materials | Works, both routes |
-| Your own materials | Work with the fork, lit ones too (the patch has CM's lighting changes, §5). Only simple ones tested in VR: constants and a UV checker, no textures, translucency or masked. Shader audit and fog check: §5 |
+| Your own materials | Work with the fork, lit ones too (the patch has CM's lighting changes, §5). Tested in VR: constants, a UV checker, masked, WPO reading custom primitive data, lit translucent (volume and per-pixel), on plain, ISM and lightmapped meshes. No textures yet. Shader audit and fog check: §5 |
 | Movable lights | Work |
 | Getting in and back out | Works with the loader and `OpenLevel` |
 | Material instances | Crashed with stock 5.5.4. Untested on the fork |
-| Textures, translucent materials, decals, landscapes | Untested |
+| Our own static mesh asset | Works, loads and collides (tested in VR) |
+| Textures, skeletal meshes, decals, landscapes | Untested |
 | The game's own meshes and materials | Unexplored. The game has them cooked, so referencing them at the same path should work as it did in ITR1, but you'd need source copies to place them, and there's no SDK for ITR2 we know of |
-| Baked lighting | Unexplored. One shader fix for it (volumetric lightmap clamp, §5) has never been seen in game |
+| Baked lighting | Works, tested in VR (lightmaps and volumetric lightmap, Preview quality). Needs the usage flags and UnrealLightmass (§5). The volumetric lightmap clamp fix itself hasn't been compared in game |
 | Navmesh, AI spawning, loot | Unexplored. The game's areas have navigation in their own sublevels |
 | Streaming the map in next to the Hub | Doesn't work yet (§7) |
 | Gates, travel, the map screen, missions, saves | Not available. The game's travel uses level tags from its own data |
@@ -358,7 +398,7 @@ for those. Your own materials do, which is why they need the fork.
 - Crash reports end up in `%LOCALAPPDATA%\IntoTheRadius2\Saved\Crashes\` (`CrashContext.runtime-xml` plus a
   minidump). The shipping game doesn't write a useful log.
 - A crash right after the loader says `travel issued` is the game's way of saying the map didn't load (§7).
-- Your materials are the grey and white grid: the container isn't named `pakchunk<N>-<anything>_P` (§5).
+- Your materials are the grey and white grid: the container isn't named `pakchunk<N>-<anything>_P` (§5), or, once lighting is built, the material usage flags aren't ticked (§5).
 - Your materials are black, unlit ones too: the `DataDrivenPlatformInfo.ini` change wasn't there when you cooked (§4,
   and the check in §5).
 - Your lit materials are very dark in shade or strobe under the torch: the fork doesn't have the lighting changes from

@@ -7,7 +7,7 @@ cooking a map we only want the PC rendering, shader platform and navigation sett
 - WindowsTargetSettings, just the RHI and shader formats (DX11 SM5 and DX12 SM6, same as the game);
 - RendererSettings: the /Steam block folded into the main one, without CM Games' own keys (CM.*,
   EnvironmentMaskShapesTextureArrayPath), which a stock engine doesn't know;
-- NavCollision, RecastNavMesh, NavigationSystemV1 and DevOptions.Shaders as they are.
+- NavCollision, RecastNavMesh, NavigationSystemV1 and DevOptions.Shaders as they are, apart from WorkerProcessPriority=0.
 
     python make_engine_ini.py <game DefaultEngine.ini> <out DefaultEngine.ini> [/Game/.../L_Map]
 """
@@ -58,7 +58,11 @@ def main():
     dropped = [l for l in renderer if SKIP_KEY.match(l.strip())]
     block("/Script/Engine.RendererSettings", [l for l in renderer if not SKIP_KEY.match(l.strip())])
     for name in KEEP[1:]:
-        block(name, sec[name])
+        lines = sec[name]
+        if name == "DevOptions.Shaders":
+            # shader workers at Normal priority (0): at a lower priority Windows moved them off the P-cores for me
+            lines = ["; ITR2 map building: shader workers at Normal priority (0)."] + [l for l in lines if not l.strip().startswith("WorkerProcessPriority")] + ["WorkerProcessPriority=0"]
+        block(name, lines)
     open(dst, "w", encoding="utf-8", newline="\r\n").write("\n".join(out))
     print(f"wrote {dst}; left out {len(dropped)} CM-only renderer keys")
 

@@ -4,15 +4,18 @@ Bits and pieces for modding **Into the Radius 2** (PC VR). Mostly about getting 
 stuff needed along the way. It's the ITR2 counterpart of [itr-common](https://github.com/oldgrev/itr-common), which
 does the same for ITR1, so if you've been through that one this should look familiar.
 
-State as of 2026-10-12: maps with your own materials work, tested in VR. You need a patched build of Meta's UE 5.5.4
+State as of 2026-10-13: maps with your own materials work, tested in VR. You need a patched build of Meta's UE 5.5.4
 fork to make them (the proper route). Lit materials work too now: CM Games changed the lighting shader code, and the
 patch ports those changes into the fork. In VR there's no strobing and the lit walls look like the game's own under the
-torch and in shade. That was tested on the example map's simple materials only (constants and a checker); textures,
-translucent and masked materials haven't been tried (details in the guide, §5).
+torch and in shade. A coverage build has been tested in VR since: our own static mesh asset, baked lighting
+(lightmaps and the volumetric lightmap), masked, instanced static meshes, world position offset reading custom primitive data, and lit
+translucent materials all render. Landscape, skeletal meshes and decals haven't been tried (guide, §5).
 I also audited the example's 19 compiled shaders against the game's own and fixed the five differences that turned up
 (height fog, aerial perspective, fill-sun luminance, volumetric lightmap clamp). The fog ones are checked in VR; the
-lightmap clamp needs baked lighting and hasn't been seen in game, and nothing beyond the simple materials has been
-audited (details in the guide, §5).
+lightmap clamp wasn't looked at on its own (baked lighting renders now, but I haven't compared that fix), and
+nothing beyond the simple materials has been audited (details in the guide, §5).
+One oddity is still open: in the first coverage build even the unlit material fell back to the grey grid, and I don't
+understand why (the usage flags in the guide fixed it).
 If your map only uses engine meshes and engine materials there's also a quick route with stock UE 5.5.4 and a small
 patch to the cooked file, a kludge, which was tested in VR too.
 
@@ -33,7 +36,11 @@ patch to the cooked file, a kludge, which was tested in VR too.
    and you're on the example map: a grey checker floor, red inner walls, a ramp and a platform, all in thick blue
    fog. Straight ahead, through a gap in the far wall, there are four pairs of pillars at 10, 25, 50 and 100 m: the
    left one of each pair uses our red material, the right one the game's own material. If the fog fades both the same
-   way, our shaders are doing fog like the game's.
+   way, our shaders are doing fog like the game's. Turn right and there's the coverage strip: three L-shaped blocks
+   (our own mesh), a lightmapped booth with a warm light, an orange dot-cutout screen, a block of red instanced cubes
+   and three cyan cubes that bob and sway. Back on the left, beside the pillar line, there are two tinted glass panes
+   (orange and green) at 6 and 22 m. If any of it shows as a grey grid, that material's shaders didn't load. The
+   green pad is still 30 m straight ahead.
 5. **Leave:** walk to the green glowing slab with a tall post, 30 m straight ahead of where you start. You're taken back to the
    Hub, to where you were standing. On a keyboard, F7 does the same (untested).
 
@@ -58,8 +65,8 @@ What's where:
 
 | Path | What's in it | Tested? |
 |---|---|---|
-| [`map-making/guide.md`](map-making/guide.md) | The how-to: setting up the project, the patched fork, cooking and packaging, the stock kludge, getting into the map, and why stock 5.5.4 isn't enough | Both routes, in VR. Lit custom materials on the fork route, simple ones only (§5) |
-| [`example-map/`](example-map/) | A small example map, scripts to make, cook, package and patch it for either route, and the prebuilt fork build | Yes, in VR (the prebuilt map is the fog and pillar test build). The build scripts are our working ones with our paths taken out; they haven't been run end to end in this exact form |
+| [`map-making/guide.md`](map-making/guide.md) | The how-to: setting up the project, the patched fork, cooking and packaging, the stock kludge, getting into the map, and why stock 5.5.4 isn't enough | Both routes, in VR. Lit custom materials on the fork route, plus the coverage set: custom mesh, baked lighting, masked, ISM, WPO, lit translucent (§5) |
+| [`example-map/`](example-map/) | A small example map, scripts to make, cook, package and patch it for either route, and the prebuilt fork build | Yes, in VR (the prebuilt map is the fog, pillar and coverage test build). The build scripts are our working ones with our paths taken out; they haven't been run end to end in this exact form |
 | [`loader-ue4ss/`](loader-ue4ss/) | The UE4SS Lua script that gets you into a custom map and back out | Yes, in VR, with `OpenLevel`. The level-instance mode doesn't work yet |
 | [`engine/`](engine/) | Our patch for Meta's UE 5.5.4 fork so it saves and compiles what the game expects (CM Games' properties, rendering version and shader layouts, and the instance transform setting). It includes CM's lighting shader changes. No Epic code in it; apply it with `tools/hashpatch.py` | Applying it gives the same files we cooked with. The patched fork cooks maps that load in game. Fog fixes checked in VR; the lightmap clamp not yet |
 | [`tools/`](tools/) | `hashpatch.py`, a check that your engine build's shader layouts match the game's, and a check of the shaders in your container | We used all of them |
